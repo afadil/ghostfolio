@@ -39,7 +39,7 @@
     "nx": "nx",
     "postinstall": "prisma generate && ngcc --properties es2020 browser module main",
     "replace-placeholders-in-build": "node ./replace.build.js",
-    "start": "node dist/apps/api/main",
+    "start": "node main",
     "start:client": "nx run client:serve --configuration=development-en --hmr -o",
     "start:prod": "yarn database:migrate && yarn database:seed && node main",
     "start:server": "nx run api:serve --watch",
