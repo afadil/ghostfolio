@@ -31,7 +31,8 @@
         >
         <div
           *ngIf="!canCreateAccount && info?.systemMessage && user"
-          class="d-inline-block info-message px-3 py-2"
+          class="cursor-pointer d-inline-block info-message px-3 py-2 text-truncate"
+          (click)="onShowSystemMessage()"
         >
           {{ info.systemMessage }}
         </div>
@@ -48,7 +49,7 @@
 >
   <div class="container text-center">
     <div>
-      © {{ currentYear }} <a href="https://ghostfol.io">Ghostfolio</a>
+      © 2021 - {{ currentYear }} <a href="https://ghostfol.io">Ghostfolio</a>
       {{ version }}
     </div>
     <div class="py-2 text-muted">

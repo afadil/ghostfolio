@@ -1,5 +1,5 @@
 import { LookupItem } from '@ghostfolio/api/app/symbol/interfaces/lookup-item.interface';
-import { ConfigurationService } from '@ghostfolio/api/services/configuration.service';
+import { ConfigurationService } from '@ghostfolio/api/services/configuration/configuration.service';
 import { DataProviderInterface } from '@ghostfolio/api/services/data-provider/interfaces/data-provider.interface';
 import {
   IDataProviderHistoricalResponse,
@@ -7,7 +7,7 @@ import {
 } from '@ghostfolio/api/services/interfaces/interfaces';
 import { DATE_FORMAT } from '@ghostfolio/common/helper';
 import { Granularity } from '@ghostfolio/common/types';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DataSource, SymbolProfile } from '@prisma/client';
 import { format, isAfter, isBefore, parse } from 'date-fns';
 
@@ -33,7 +33,8 @@ export class AlphaVantageService implements DataProviderInterface {
     aSymbol: string
   ): Promise<Partial<SymbolProfile>> {
     return {
-      dataSource: this.getName()
+      dataSource: this.getName(),
+      symbol: aSymbol
     };
   }
 
@@ -107,6 +108,10 @@ export class AlphaVantageService implements DataProviderInterface {
     aSymbols: string[]
   ): Promise<{ [symbol: string]: IDataProviderResponse }> {
     return {};
+  }
+
+  public getTestSymbol() {
+    return undefined;
   }
 
   public async search(aQuery: string): Promise<{ items: LookupItem[] }> {

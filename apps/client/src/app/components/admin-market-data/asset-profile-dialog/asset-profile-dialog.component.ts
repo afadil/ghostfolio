@@ -7,13 +7,11 @@ import {
   OnInit
 } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
-import {
-  MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA,
-  MatLegacyDialogRef as MatDialogRef
-} from '@angular/material/legacy-dialog';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { UpdateAssetProfileDto } from '@ghostfolio/api/app/admin/update-asset-profile.dto';
 import { AdminService } from '@ghostfolio/client/services/admin.service';
 import {
+  AdminMarketDataDetails,
   EnhancedSymbolProfile,
   UniqueAsset
 } from '@ghostfolio/common/interfaces';
@@ -33,7 +31,7 @@ import { AssetProfileDialogParams } from './interfaces/interfaces';
 })
 export class AssetProfileDialog implements OnDestroy, OnInit {
   public assetClass: string;
-  public assetProfile: EnhancedSymbolProfile;
+  public assetProfile: AdminMarketDataDetails['assetProfile'];
   public assetProfileForm = this.formBuilder.group({
     comment: '',
     symbolMapping: ''

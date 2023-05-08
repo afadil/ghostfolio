@@ -4,9 +4,9 @@
   (closeButtonClicked)="onClose()"
 ></gf-dialog-header>
 
-<div mat-dialog-content>
+<div class="py-3" mat-dialog-content>
   <div class="align-items-center d-flex flex-column">
-    <mat-form-field appearance="outline" class="w-100">
+    <mat-form-field appearance="outline" class="without-hint w-100">
       <mat-label i18n>Security Token</mat-label>
       <textarea
         cdkTextareaAutosize
@@ -45,7 +45,7 @@
 </div>
 <div mat-dialog-actions>
   <div class="flex-grow-1">
-    <mat-checkbox i18n (change)="onChangeStaySignedIn($event)"
+    <mat-checkbox color="primary" i18n (change)="onChangeStaySignedIn($event)"
       >Stay signed in</mat-checkbox
     >
   </div>

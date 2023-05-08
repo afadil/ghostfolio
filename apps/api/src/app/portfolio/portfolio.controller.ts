@@ -8,8 +8,9 @@ import { RedactValuesInResponseInterceptor } from '@ghostfolio/api/interceptors/
 import { TransformDataSourceInRequestInterceptor } from '@ghostfolio/api/interceptors/transform-data-source-in-request.interceptor';
 import { TransformDataSourceInResponseInterceptor } from '@ghostfolio/api/interceptors/transform-data-source-in-response.interceptor';
 import { ApiService } from '@ghostfolio/api/services/api/api.service';
-import { ConfigurationService } from '@ghostfolio/api/services/configuration.service';
-import { ExchangeRateDataService } from '@ghostfolio/api/services/exchange-rate-data.service';
+import { ConfigurationService } from '@ghostfolio/api/services/configuration/configuration.service';
+import { ExchangeRateDataService } from '@ghostfolio/api/services/exchange-rate-data/exchange-rate-data.service';
+import { HEADER_KEY_IMPERSONATION } from '@ghostfolio/common/config';
 import {
   PortfolioDetails,
   PortfolioDividends,
@@ -65,7 +66,7 @@ export class PortfolioController {
   @UseInterceptors(RedactValuesInResponseInterceptor)
   @UseInterceptors(TransformDataSourceInResponseInterceptor)
   public async getDetails(
-    @Headers('impersonation-id') impersonationId: string,
+    @Headers(HEADER_KEY_IMPERSONATION.toLowerCase()) impersonationId: string,
     @Query('accounts') filterByAccounts?: string,
     @Query('assetClasses') filterByAssetClasses?: string,
     @Query('range') dateRange: DateRange = 'max',
@@ -90,6 +91,7 @@ export class PortfolioController {
       filteredValueInPercentage,
       hasErrors,
       holdings,
+      platforms,
       summary,
       totalValueInBaseCurrency
     } = await this.portfolioService.getDetails({
@@ -135,9 +137,12 @@ export class PortfolioController {
           portfolioPosition.value / totalValue;
       }
 
-      for (const [name, { current, original }] of Object.entries(accounts)) {
-        accounts[name].current = current / totalValue;
-        accounts[name].original = original / totalInvestment;
+      for (const [name, { valueInBaseCurrency }] of Object.entries(accounts)) {
+        accounts[name].valueInPercentage = valueInBaseCurrency / totalValue;
+      }
+
+      for (const [name, { valueInBaseCurrency }] of Object.entries(platforms)) {
+        platforms[name].valueInPercentage = valueInBaseCurrency / totalValue;
       }
     }
 
@@ -181,6 +186,7 @@ export class PortfolioController {
       filteredValueInPercentage,
       hasError,
       holdings,
+      platforms,
       totalValueInBaseCurrency,
       summary: portfolioSummary
     };
@@ -189,7 +195,7 @@ export class PortfolioController {
   @Get('dividends')
   @UseGuards(AuthGuard('jwt'))
   public async getDividends(
-    @Headers('impersonation-id') impersonationId: string,
+    @Headers(HEADER_KEY_IMPERSONATION.toLowerCase()) impersonationId: string,
     @Query('accounts') filterByAccounts?: string,
     @Query('assetClasses') filterByAssetClasses?: string,
     @Query('groupBy') groupBy?: GroupBy,
@@ -239,7 +245,7 @@ export class PortfolioController {
   @Get('investments')
   @UseGuards(AuthGuard('jwt'))
   public async getInvestments(
-    @Headers('impersonation-id') impersonationId: string,
+    @Headers(HEADER_KEY_IMPERSONATION.toLowerCase()) impersonationId: string,
     @Query('accounts') filterByAccounts?: string,
     @Query('assetClasses') filterByAssetClasses?: string,
     @Query('groupBy') groupBy?: GroupBy,
@@ -291,7 +297,7 @@ export class PortfolioController {
   @UseInterceptors(TransformDataSourceInResponseInterceptor)
   @Version('2')
   public async getPerformanceV2(
-    @Headers('impersonation-id') impersonationId: string,
+    @Headers(HEADER_KEY_IMPERSONATION.toLowerCase()) impersonationId: string,
     @Query('accounts') filterByAccounts?: string,
     @Query('assetClasses') filterByAssetClasses?: string,
     @Query('range') dateRange: DateRange = 'max',
@@ -360,7 +366,7 @@ export class PortfolioController {
   @UseInterceptors(RedactValuesInResponseInterceptor)
   @UseInterceptors(TransformDataSourceInResponseInterceptor)
   public async getPositions(
-    @Headers('impersonation-id') impersonationId: string,
+    @Headers(HEADER_KEY_IMPERSONATION.toLowerCase()) impersonationId: string,
     @Query('accounts') filterByAccounts?: string,
     @Query('assetClasses') filterByAssetClasses?: string,
     @Query('range') dateRange: DateRange = 'max',
@@ -451,7 +457,7 @@ export class PortfolioController {
   @UseInterceptors(TransformDataSourceInResponseInterceptor)
   @UseGuards(AuthGuard('jwt'))
   public async getPosition(
-    @Headers('impersonation-id') impersonationId: string,
+    @Headers(HEADER_KEY_IMPERSONATION.toLowerCase()) impersonationId: string,
     @Param('dataSource') dataSource,
     @Param('symbol') symbol
   ): Promise<PortfolioPositionDetail> {
@@ -474,7 +480,7 @@ export class PortfolioController {
   @Get('report')
   @UseGuards(AuthGuard('jwt'))
   public async getReport(
-    @Headers('impersonation-id') impersonationId: string
+    @Headers(HEADER_KEY_IMPERSONATION.toLowerCase()) impersonationId: string
   ): Promise<PortfolioReport> {
     const report = await this.portfolioService.getReport(impersonationId);
 

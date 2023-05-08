@@ -30,23 +30,15 @@
 <div class="container">
   <div class="button-container mb-5 row">
     <div class="align-items-center col d-flex justify-content-center">
-      <div class="text-center">
-        <ng-container *ngIf="hasPermissionToCreateUser">
-          <a
-            class="d-inline-block"
-            color="primary"
-            mat-flat-button
-            [routerLink]="['/register']"
-          >
-            Get Started
-          </a>
-          <div class="d-inline-block mx-3 text-muted">or</div></ng-container
-        >
-
-        <a class="d-inline-block" mat-stroked-button [routerLink]="['/demo']">
-          Live Demo
+      <ng-container *ngIf="hasPermissionToCreateUser">
+        <a color="primary" mat-flat-button [routerLink]="['/register']">
+          Get Started
         </a>
-      </div>
+      </ng-container>
+      <ng-container *ngIf="hasPermissionForDemo">
+        <div *ngIf="hasPermissionToCreateUser" class="mx-3 text-muted">or</div>
+        <a mat-stroked-button [routerLink]="['/demo']"> Live Demo </a>
+      </ng-container>
     </div>
   </div>
 
@@ -143,6 +135,14 @@
     </div>
     <div class="col-md-3 d-flex justify-content-center my-1">
       <a
+        class="d-block logo logo-dev-community mask"
+        href="https://dev.to"
+        target="_blank"
+        title="DEV Community - A constructive and inclusive social network for software developers"
+      ></a>
+    </div>
+    <div class="col-md-3 d-flex justify-content-center my-1">
+      <a
         class="d-block logo logo-openstartup"
         href="https://openstartup.tm"
         target="_blank"
@@ -165,6 +165,14 @@
         title="Product Hunt – The best new products in tech."
       ></a>
     </div>
+    <div class="align-items-center col-md-3 d-flex justify-content-center my-1">
+      <a
+        class="d-block logo logo-reddit mask"
+        href="https://www.reddit.com"
+        target="_blank"
+        title="Reddit - Dive into anything"
+      ></a>
+    </div>
     <div class="col-md-3 d-flex justify-content-center my-1">
       <a
         class="d-block logo logo-sackgeld mask"
@@ -179,6 +187,14 @@
         href="https://sourceforge.net"
         target="_blank"
         title="SourceForge: The Complete Open-Source and Business Software Platform"
+      ></a>
+    </div>
+    <div class="align-items-center col-md-3 d-flex justify-content-center my-1">
+      <a
+        class="d-block logo logo-umbrel mask"
+        href="https://umbrel.com"
+        target="_blank"
+        title="Umbrel — A personal server OS for self-hosting"
       ></a>
     </div>
     <div class="col-md-3 d-flex justify-content-center my-1">
@@ -206,22 +222,33 @@
 
   <div class="row my-3">
     <div class="col-md-4 my-2">
-      <mat-card>
-        <mat-card-title>360° View</mat-card-title>
-        Get the full picture of your personal finances across multiple
-        platforms.
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>360° View</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          Get the full picture of your personal finances across multiple
+        </mat-card-content>
       </mat-card>
     </div>
     <div class="col-md-4 my-2">
-      <mat-card>
-        <mat-card-title>Web3 Ready</mat-card-title>
-        Use Ghostfolio anonymously and own your financial data.
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>Web3 Ready</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          Use Ghostfolio anonymously and own your financial data.
+        </mat-card-content>
       </mat-card>
     </div>
     <div class="col-md-4 my-2">
-      <mat-card>
-        <mat-card-title>Open Source</mat-card-title>
-        Benefit from continuous improvements through a strong community.
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>Open Source</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          Benefit from continuous improvements through a strong community.
+        </mat-card-content>
       </mat-card>
     </div>
   </div>
@@ -297,7 +324,12 @@
         <div>
           <div>{{ testimonial.quote }}</div>
           <div class="mt-2 text-muted">
-            — {{ testimonial.author }}, {{ testimonial.country }}
+            —
+            <a *ngIf="testimonial.url" target="_blank" [href]="testimonial.url"
+              >{{ testimonial.author }}</a
+            >
+            <span *ngIf="!testimonial.url">{{ testimonial.author }}</span>, {{
+            testimonial.country }}
           </div>
         </div>
       </div>
@@ -327,34 +359,40 @@
       <p class="lead mb-3 text-center">Get started in only 3 steps</p>
     </div>
     <div class="col-md-4 my-2">
-      <mat-card class="d-flex flex-row h-100">
-        <div class="flex-grow-1">
-          <div class="font-weight-bold">Sign up anonymously*</div>
-          <div class="text-muted">
-            <small>* no e-mail address nor credit card required</small>
+      <mat-card appearance="outlined" class="h-100">
+        <mat-card-content class="d-flex flex-row">
+          <div class="flex-grow-1">
+            <div class="font-weight-bold">Sign up anonymously*</div>
+            <div class="text-muted">
+              <small>* no e-mail address nor credit card required</small>
+            </div>
           </div>
-        </div>
-        <div class="pl-2 text-muted text-right">1</div>
+          <div class="pl-2 text-muted text-right">1</div>
+        </mat-card-content>
       </mat-card>
     </div>
     <div class="col-md-4 my-2">
-      <mat-card class="d-flex flex-row h-100">
-        <div class="flex-grow-1">
-          <div class="font-weight-bold">
-            Add any of your historical transactions
+      <mat-card appearance="outlined" class="h-100">
+        <mat-card-content class="d-flex flex-row">
+          <div class="flex-grow-1">
+            <div class="font-weight-bold">
+              Add any of your historical transactions
+            </div>
           </div>
-        </div>
-        <div class="pl-2 text-muted text-right">2</div>
+          <div class="pl-2 text-muted text-right">2</div>
+        </mat-card-content>
       </mat-card>
     </div>
     <div class="col-md-4 my-2">
-      <mat-card class="d-flex flex-row h-100">
-        <div class="flex-grow-1">
-          <div class="font-weight-bold">
-            Get valuable insights of your portfolio composition
+      <mat-card appearance="outlined" class="h-100">
+        <mat-card-content class="d-flex flex-row">
+          <div class="flex-grow-1">
+            <div class="font-weight-bold">
+              Get valuable insights of your portfolio composition
+            </div>
           </div>
-        </div>
-        <div class="pl-2 text-muted text-right">3</div>
+          <div class="pl-2 text-muted text-right">3</div>
+        </mat-card-content>
       </mat-card>
     </div>
   </div>
@@ -363,16 +401,18 @@
     <div class="col">
       <h2 class="h4 mb-1 text-center">Are <strong>you</strong> ready?</h2>
       <p class="lead mb-3 text-center">
-        Join now or check out the example account
+        Join now<ng-container *ngIf="hasPermissionForDemo">
+          or check out the example account</ng-container
+        >
       </p>
-      <div class="py-2 text-center">
+      <div class="align-items-center d-flex justify-content-center py-2">
         <a color="primary" mat-flat-button [routerLink]="['/register']">
           Get Started
         </a>
-        <div class="d-inline-block mx-3 text-muted">or</div>
-        <a class="d-inline-block" mat-stroked-button [routerLink]="['/demo']">
-          Live Demo
-        </a>
+        <ng-container *ngIf="hasPermissionForDemo">
+          <div class="mx-3 text-muted">or</div>
+          <a mat-stroked-button [routerLink]="['/demo']"> Live Demo </a>
+        </ng-container>
       </div>
     </div>
   </div>

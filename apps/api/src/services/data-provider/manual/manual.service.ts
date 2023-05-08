@@ -4,8 +4,8 @@ import {
   IDataProviderHistoricalResponse,
   IDataProviderResponse
 } from '@ghostfolio/api/services/interfaces/interfaces';
-import { PrismaService } from '@ghostfolio/api/services/prisma.service';
-import { SymbolProfileService } from '@ghostfolio/api/services/symbol-profile.service';
+import { PrismaService } from '@ghostfolio/api/services/prisma/prisma.service';
+import { SymbolProfileService } from '@ghostfolio/api/services/symbol-profile/symbol-profile.service';
 import {
   DATE_FORMAT,
   extractNumberFromString,
@@ -16,6 +16,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DataSource, SymbolProfile } from '@prisma/client';
 import bent from 'bent';
 import * as cheerio from 'cheerio';
+import { isUUID } from 'class-validator';
 import { addDays, format, isBefore } from 'date-fns';
 
 @Injectable()
@@ -33,7 +34,8 @@ export class ManualService implements DataProviderInterface {
     aSymbol: string
   ): Promise<Partial<SymbolProfile>> {
     return {
-      dataSource: this.getName()
+      dataSource: this.getName(),
+      symbol: aSymbol
     };
   }
 
@@ -62,8 +64,9 @@ export class ManualService implements DataProviderInterface {
     try {
       const symbol = aSymbol;
 
-      const [symbolProfile] =
-        await this.symbolProfileService.getSymbolProfilesBySymbols([symbol]);
+      const [symbolProfile] = await this.symbolProfileService.getSymbolProfiles(
+        [{ symbol, dataSource: this.getName() }]
+      );
       const { defaultMarketPrice, selector, url } =
         symbolProfile.scraperConfiguration ?? {};
 
@@ -126,8 +129,11 @@ export class ManualService implements DataProviderInterface {
     }
 
     try {
-      const symbolProfiles =
-        await this.symbolProfileService.getSymbolProfilesBySymbols(aSymbols);
+      const symbolProfiles = await this.symbolProfileService.getSymbolProfiles(
+        aSymbols.map((symbol) => {
+          return { symbol, dataSource: this.getName() };
+        })
+      );
 
       const marketData = await this.prismaService.marketData.findMany({
         distinct: ['symbol'],
@@ -161,9 +167,15 @@ export class ManualService implements DataProviderInterface {
     return {};
   }
 
+  public getTestSymbol() {
+    return undefined;
+  }
+
   public async search(aQuery: string): Promise<{ items: LookupItem[] }> {
-    const items = await this.prismaService.symbolProfile.findMany({
+    let items = await this.prismaService.symbolProfile.findMany({
       select: {
+        assetClass: true,
+        assetSubClass: true,
         currency: true,
         dataSource: true,
         name: true,
@@ -187,6 +199,11 @@ export class ManualService implements DataProviderInterface {
           }
         ]
       }
+    });
+
+    items = items.filter(({ symbol }) => {
+      // Remove UUID symbols (activities of type ITEM)
+      return !isUUID(symbol);
     });
 
     return { items };

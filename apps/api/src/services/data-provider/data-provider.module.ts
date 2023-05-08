@@ -1,26 +1,35 @@
-import { ConfigurationModule } from '@ghostfolio/api/services/configuration.module';
+import { ConfigurationModule } from '@ghostfolio/api/services/configuration/configuration.module';
 import { CryptocurrencyModule } from '@ghostfolio/api/services/cryptocurrency/cryptocurrency.module';
 import { AlphaVantageService } from '@ghostfolio/api/services/data-provider/alpha-vantage/alpha-vantage.service';
+import { CoinGeckoService } from '@ghostfolio/api/services/data-provider/coingecko/coingecko.service';
 import { EodHistoricalDataService } from '@ghostfolio/api/services/data-provider/eod-historical-data/eod-historical-data.service';
 import { GoogleSheetsService } from '@ghostfolio/api/services/data-provider/google-sheets/google-sheets.service';
 import { ManualService } from '@ghostfolio/api/services/data-provider/manual/manual.service';
 import { RapidApiService } from '@ghostfolio/api/services/data-provider/rapid-api/rapid-api.service';
 import { YahooFinanceService } from '@ghostfolio/api/services/data-provider/yahoo-finance/yahoo-finance.service';
-import { PrismaModule } from '@ghostfolio/api/services/prisma.module';
-import { SymbolProfileModule } from '@ghostfolio/api/services/symbol-profile.module';
+import { MarketDataModule } from '@ghostfolio/api/services/market-data/market-data.module';
+import { PrismaModule } from '@ghostfolio/api/services/prisma/prisma.module';
+import { PropertyModule } from '@ghostfolio/api/services/property/property.module';
+import { SymbolProfileModule } from '@ghostfolio/api/services/symbol-profile/symbol-profile.module';
 import { Module } from '@nestjs/common';
 
+import { DataEnhancerModule } from './data-enhancer/data-enhancer.module';
+import { YahooFinanceDataEnhancerService } from './data-enhancer/yahoo-finance/yahoo-finance.service';
 import { DataProviderService } from './data-provider.service';
 
 @Module({
   imports: [
     ConfigurationModule,
     CryptocurrencyModule,
+    DataEnhancerModule,
+    MarketDataModule,
     PrismaModule,
+    PropertyModule,
     SymbolProfileModule
   ],
   providers: [
     AlphaVantageService,
+    CoinGeckoService,
     DataProviderService,
     EodHistoricalDataService,
     GoogleSheetsService,
@@ -30,6 +39,7 @@ import { DataProviderService } from './data-provider.service';
     {
       inject: [
         AlphaVantageService,
+        CoinGeckoService,
         EodHistoricalDataService,
         GoogleSheetsService,
         ManualService,
@@ -39,6 +49,7 @@ import { DataProviderService } from './data-provider.service';
       provide: 'DataProviderInterfaces',
       useFactory: (
         alphaVantageService,
+        coinGeckoService,
         eodHistoricalDataService,
         googleSheetsService,
         manualService,
@@ -46,13 +57,15 @@ import { DataProviderService } from './data-provider.service';
         yahooFinanceService
       ) => [
         alphaVantageService,
+        coinGeckoService,
         eodHistoricalDataService,
         googleSheetsService,
         manualService,
         rapidApiService,
         yahooFinanceService
       ]
-    }
+    },
+    YahooFinanceDataEnhancerService
   ],
   exports: [DataProviderService, YahooFinanceService]
 })

@@ -10,15 +10,10 @@ async function bootstrap() {
   const configApp = await NestFactory.create(AppModule);
   const configService = configApp.get<ConfigService>(ConfigService);
 
-  const NODE_ENV =
-    configService.get<'development' | 'production'>('NODE_ENV') ??
-    'development';
-
   const app = await NestFactory.create(AppModule, {
-    logger:
-      NODE_ENV === 'production'
-        ? ['error', 'log', 'warn']
-        : ['debug', 'error', 'log', 'verbose', 'warn']
+    logger: environment.production
+      ? ['error', 'log', 'warn']
+      : ['debug', 'error', 'log', 'verbose', 'warn']
   });
   app.enableCors();
   app.enableVersioning({
@@ -37,12 +32,23 @@ async function bootstrap() {
   // Support 10mb csv/json files for importing activities
   app.use(bodyParser.json({ limit: '10mb' }));
 
+  const BASE_CURRENCY = configService.get<string>('BASE_CURRENCY');
   const HOST = configService.get<string>('HOST') || '0.0.0.0';
   const PORT = configService.get<number>('PORT') || 3333;
+
   await app.listen(PORT, HOST, () => {
     logLogo();
     Logger.log(`Listening at http://${HOST}:${PORT}`);
     Logger.log('');
+
+    if (BASE_CURRENCY) {
+      Logger.warn(
+        `The environment variable "BASE_CURRENCY" is deprecated and will be removed in Ghostfolio 2.0.`
+      );
+      Logger.warn(
+        'Please use the currency converter in the activity dialog instead.'
+      );
+    }
   });
 }
 

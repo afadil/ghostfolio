@@ -1,7 +1,7 @@
 <div class="container">
-  <div class="mb-5 row">
+  <div class="row">
     <div class="col">
-      <mat-card class="mb-3">
+      <mat-card appearance="outlined" class="mb-3">
         <mat-card-content>
           <div class="d-flex my-3">
             <div class="w-50" i18n>User Count</div>
@@ -51,7 +51,7 @@
                   <td>
                     <button
                       *ngIf="customCurrencies.includes(exchangeRate.label2)"
-                      class="mini-icon mx-1 no-min-width px-2"
+                      class="h-100 mx-1 no-min-width px-2"
                       mat-button
                       (click)="onDeleteCurrency(exchangeRate.label2)"
                     >
@@ -101,21 +101,21 @@
           <div class="d-flex my-3">
             <div class="w-50" i18n>User Signup</div>
             <div class="w-50">
-              <mat-slide-toggle
+              <mat-checkbox
                 color="primary"
                 [checked]="info.globalPermissions.includes(permissions.createUserAccount)"
                 (change)="onEnableUserSignupModeChange($event)"
-              ></mat-slide-toggle>
+              ></mat-checkbox>
             </div>
           </div>
           <div *ngIf="hasPermissionToToggleReadOnlyMode" class="d-flex my-3">
             <div class="w-50" i18n>Read-only Mode</div>
             <div class="w-50">
-              <mat-slide-toggle
+              <mat-checkbox
                 color="primary"
                 [checked]="info?.isReadOnlyMode"
                 (change)="onReadOnlyModeChange($event)"
-              ></mat-slide-toggle>
+              ></mat-checkbox>
             </div>
           </div>
           <div *ngIf="hasPermissionForSystemMessage" class="d-flex my-3">
@@ -124,7 +124,7 @@
               <div *ngIf="info?.systemMessage">
                 <span>{{ info.systemMessage }}</span>
                 <button
-                  class="mini-icon mx-1 no-min-width px-2"
+                  class="h-100 mx-1 no-min-width px-2"
                   mat-button
                   (click)="onDeleteSystemMessage()"
                 >
@@ -159,7 +159,7 @@
                   </td>
                   <td>
                     <button
-                      class="mini-icon mx-1 no-min-width px-2"
+                      class="h-100 mx-1 no-min-width px-2"
                       mat-button
                       (click)="onDeleteCoupon(coupon.code)"
                     >
@@ -172,7 +172,7 @@
                 <form #couponForm="ngForm" class="align-items-center d-flex">
                   <mat-form-field
                     appearance="outline"
-                    class="compact-with-outline mr-2 without-hint"
+                    class="mr-2 without-hint"
                   >
                     <mat-select
                       name="duration"

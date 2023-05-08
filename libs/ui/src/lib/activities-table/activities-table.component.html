@@ -53,6 +53,14 @@
       <ion-icon class="mr-2" name="calendar-clear-outline"></ion-icon>
       <span i18n>Export Drafts as ICS</span>
     </button>
+    <button
+      class="align-items-center d-flex"
+      mat-menu-item
+      (click)="onDeleteAllActivities()"
+    >
+      <ion-icon class="mr-2" name="trash-outline"></ion-icon>
+      <span i18n>Delete all Activities</span>
+    </button>
   </mat-menu>
 </div>
 
@@ -391,7 +399,6 @@
         *matHeaderCellDef
         class="d-none d-lg-table-cell px-1"
         mat-header-cell
-        mat-sort-header
       ></th>
       <td
         *matCellDef="let element"

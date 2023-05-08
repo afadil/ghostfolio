@@ -1,5 +1,5 @@
 import { LookupItem } from '@ghostfolio/api/app/symbol/interfaces/lookup-item.interface';
-import { ConfigurationService } from '@ghostfolio/api/services/configuration.service';
+import { ConfigurationService } from '@ghostfolio/api/services/configuration/configuration.service';
 import { DataProviderInterface } from '@ghostfolio/api/services/data-provider/interfaces/data-provider.interface';
 import {
   IDataProviderHistoricalResponse,
@@ -27,7 +27,8 @@ export class RapidApiService implements DataProviderInterface {
     aSymbol: string
   ): Promise<Partial<SymbolProfile>> {
     return {
-      dataSource: this.getName()
+      dataSource: this.getName(),
+      symbol: aSymbol
     };
   }
 
@@ -110,6 +111,10 @@ export class RapidApiService implements DataProviderInterface {
     }
 
     return {};
+  }
+
+  public getTestSymbol() {
+    return undefined;
   }
 
   public async search(aQuery: string): Promise<{ items: LookupItem[] }> {

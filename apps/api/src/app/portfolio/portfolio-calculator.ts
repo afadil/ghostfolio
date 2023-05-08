@@ -1,7 +1,11 @@
 import { TimelineInfoInterface } from '@ghostfolio/api/app/portfolio/interfaces/timeline-info.interface';
 import { IDataGatheringItem } from '@ghostfolio/api/services/interfaces/interfaces';
 import { DATE_FORMAT, parseDate, resetHours } from '@ghostfolio/common/helper';
-import { ResponseError, TimelinePosition } from '@ghostfolio/common/interfaces';
+import {
+  DataProviderInfo,
+  ResponseError,
+  TimelinePosition
+} from '@ghostfolio/common/interfaces';
 import { GroupBy } from '@ghostfolio/common/types';
 import { Logger } from '@nestjs/common';
 import { Type as TypeOfOrder } from '@prisma/client';
@@ -20,9 +24,10 @@ import {
   isSameYear,
   max,
   min,
-  set
+  set,
+  subDays
 } from 'date-fns';
-import { first, flatten, isNumber, last, sortBy } from 'lodash';
+import { first, flatten, isNumber, last, sortBy, uniq } from 'lodash';
 
 import { CurrentRateService } from './current-rate.service';
 import { CurrentPositions } from './interfaces/current-positions.interface';
@@ -45,6 +50,7 @@ export class PortfolioCalculator {
 
   private currency: string;
   private currentRateService: CurrentRateService;
+  private dataProviderInfos: DataProviderInfo[];
   private orders: PortfolioOrder[];
   private transactionPoints: TransactionPoint[];
 
@@ -177,10 +183,10 @@ export class PortfolioCalculator {
         return isBefore(parseDate(transactionPoint.date), end);
       }) ?? [];
 
-    const firstIndex = transactionPointsBeforeEndDate.length;
+    const currencies: { [symbol: string]: string } = {};
     const dates: Date[] = [];
     const dataGatheringItems: IDataGatheringItem[] = [];
-    const currencies: { [symbol: string]: string } = {};
+    const firstIndex = transactionPointsBeforeEndDate.length;
 
     let day = start;
 
@@ -202,14 +208,17 @@ export class PortfolioCalculator {
       symbols[item.symbol] = true;
     }
 
-    const marketSymbols = await this.currentRateService.getValues({
-      currencies,
-      dataGatheringItems,
-      dateQuery: {
-        in: dates
-      },
-      userCurrency: this.currency
-    });
+    const { dataProviderInfos, values: marketSymbols } =
+      await this.currentRateService.getValues({
+        currencies,
+        dataGatheringItems,
+        dateQuery: {
+          in: dates
+        },
+        userCurrency: this.currency
+      });
+
+    this.dataProviderInfos = dataProviderInfos;
 
     const marketSymbolMap: {
       [date: string]: { [symbol: string]: Big };
@@ -227,87 +236,100 @@ export class PortfolioCalculator {
       }
     }
 
-    const netPerformanceValuesBySymbol: {
-      [symbol: string]: { [date: string]: Big };
+    const valuesByDate: {
+      [date: string]: {
+        maxTotalInvestmentValue: Big;
+        totalCurrentValue: Big;
+        totalInvestmentValue: Big;
+        totalNetPerformanceValue: Big;
+      };
     } = {};
 
-    const investmentValuesBySymbol: {
-      [symbol: string]: { [date: string]: Big };
+    const valuesBySymbol: {
+      [symbol: string]: {
+        currentValues: { [date: string]: Big };
+        investmentValues: { [date: string]: Big };
+        maxInvestmentValues: { [date: string]: Big };
+        netPerformanceValues: { [date: string]: Big };
+      };
     } = {};
-
-    const maxInvestmentValuesBySymbol: {
-      [symbol: string]: { [date: string]: Big };
-    } = {};
-
-    const totalNetPerformanceValues: { [date: string]: Big } = {};
-    const totalInvestmentValues: { [date: string]: Big } = {};
-    const maxTotalInvestmentValues: { [date: string]: Big } = {};
 
     for (const symbol of Object.keys(symbols)) {
-      const { investmentValues, maxInvestmentValues, netPerformanceValues } =
-        this.getSymbolMetrics({
-          end,
-          marketSymbolMap,
-          start,
-          step,
-          symbol,
-          isChartMode: true
-        });
+      const {
+        currentValues,
+        investmentValues,
+        maxInvestmentValues,
+        netPerformanceValues
+      } = this.getSymbolMetrics({
+        end,
+        marketSymbolMap,
+        start,
+        step,
+        symbol,
+        isChartMode: true
+      });
 
-      netPerformanceValuesBySymbol[symbol] = netPerformanceValues;
-      investmentValuesBySymbol[symbol] = investmentValues;
-      maxInvestmentValuesBySymbol[symbol] = maxInvestmentValues;
+      valuesBySymbol[symbol] = {
+        currentValues,
+        investmentValues,
+        maxInvestmentValues,
+        netPerformanceValues
+      };
     }
 
     for (const currentDate of dates) {
       const dateString = format(currentDate, DATE_FORMAT);
 
-      for (const symbol of Object.keys(netPerformanceValuesBySymbol)) {
-        totalNetPerformanceValues[dateString] =
-          totalNetPerformanceValues[dateString] ?? new Big(0);
+      for (const symbol of Object.keys(valuesBySymbol)) {
+        const symbolValues = valuesBySymbol[symbol];
 
-        if (netPerformanceValuesBySymbol[symbol]?.[dateString]) {
-          totalNetPerformanceValues[dateString] = totalNetPerformanceValues[
-            dateString
-          ].add(netPerformanceValuesBySymbol[symbol][dateString]);
-        }
+        const currentValue =
+          symbolValues.currentValues?.[dateString] ?? new Big(0);
+        const investmentValue =
+          symbolValues.investmentValues?.[dateString] ?? new Big(0);
+        const maxInvestmentValue =
+          symbolValues.maxInvestmentValues?.[dateString] ?? new Big(0);
+        const netPerformanceValue =
+          symbolValues.netPerformanceValues?.[dateString] ?? new Big(0);
 
-        totalInvestmentValues[dateString] =
-          totalInvestmentValues[dateString] ?? new Big(0);
-
-        maxTotalInvestmentValues[dateString] =
-          maxTotalInvestmentValues[dateString] ?? new Big(0);
-
-        if (investmentValuesBySymbol[symbol]?.[dateString]) {
-          totalInvestmentValues[dateString] = totalInvestmentValues[
-            dateString
-          ].add(investmentValuesBySymbol[symbol][dateString]);
-        }
-
-        if (maxInvestmentValuesBySymbol[symbol]?.[dateString]) {
-          maxTotalInvestmentValues[dateString] = maxTotalInvestmentValues[
-            dateString
-          ].add(maxInvestmentValuesBySymbol[symbol][dateString]);
-        }
+        valuesByDate[dateString] = {
+          totalCurrentValue: (
+            valuesByDate[dateString]?.totalCurrentValue ?? new Big(0)
+          ).add(currentValue),
+          totalInvestmentValue: (
+            valuesByDate[dateString]?.totalInvestmentValue ?? new Big(0)
+          ).add(investmentValue),
+          maxTotalInvestmentValue: (
+            valuesByDate[dateString]?.maxTotalInvestmentValue ?? new Big(0)
+          ).add(maxInvestmentValue),
+          totalNetPerformanceValue: (
+            valuesByDate[dateString]?.totalNetPerformanceValue ?? new Big(0)
+          ).add(netPerformanceValue)
+        };
       }
     }
 
-    return Object.keys(totalNetPerformanceValues).map((date) => {
-      const netPerformanceInPercentage = maxTotalInvestmentValues[date].eq(0)
+    return Object.entries(valuesByDate).map(([date, values]) => {
+      const {
+        maxTotalInvestmentValue,
+        totalCurrentValue,
+        totalInvestmentValue,
+        totalNetPerformanceValue
+      } = values;
+
+      const netPerformanceInPercentage = maxTotalInvestmentValue.eq(0)
         ? 0
-        : totalNetPerformanceValues[date]
-            .div(maxTotalInvestmentValues[date])
+        : totalNetPerformanceValue
+            .div(maxTotalInvestmentValue)
             .mul(100)
             .toNumber();
 
       return {
         date,
         netPerformanceInPercentage,
-        netPerformance: totalNetPerformanceValues[date].toNumber(),
-        totalInvestment: totalInvestmentValues[date].toNumber(),
-        value: totalInvestmentValues[date]
-          .plus(totalNetPerformanceValues[date])
-          .toNumber()
+        netPerformance: totalNetPerformanceValue.toNumber(),
+        totalInvestment: totalInvestmentValue.toNumber(),
+        value: totalCurrentValue.toNumber()
       };
     });
   }
@@ -339,7 +361,7 @@ export class PortfolioCalculator {
 
     let firstTransactionPoint: TransactionPoint = null;
     let firstIndex = transactionPointsBeforeEndDate.length;
-    const dates = [];
+    let dates = [];
     const dataGatheringItems: IDataGatheringItem[] = [];
     const currencies: { [symbol: string]: string } = {};
 
@@ -368,7 +390,30 @@ export class PortfolioCalculator {
 
     dates.push(resetHours(end));
 
-    const marketSymbols = await this.currentRateService.getValues({
+    // Add dates of last week for fallback
+    dates.push(subDays(resetHours(new Date()), 7));
+    dates.push(subDays(resetHours(new Date()), 6));
+    dates.push(subDays(resetHours(new Date()), 5));
+    dates.push(subDays(resetHours(new Date()), 4));
+    dates.push(subDays(resetHours(new Date()), 3));
+    dates.push(subDays(resetHours(new Date()), 2));
+    dates.push(subDays(resetHours(new Date()), 1));
+    dates.push(resetHours(new Date()));
+
+    dates = uniq(
+      dates.map((date) => {
+        return date.getTime();
+      })
+    ).map((timestamp) => {
+      return new Date(timestamp);
+    });
+    dates.sort((a, b) => a.getTime() - b.getTime());
+
+    const {
+      dataProviderInfos,
+      errors: currentRateErrors,
+      values: marketSymbols
+    } = await this.currentRateService.getValues({
       currencies,
       dataGatheringItems,
       dateQuery: {
@@ -376,6 +421,8 @@ export class PortfolioCalculator {
       },
       userCurrency: this.currency
     });
+
+    this.dataProviderInfos = dataProviderInfos;
 
     const marketSymbolMap: {
       [date: string]: { [symbol: string]: Big };
@@ -448,7 +495,13 @@ export class PortfolioCalculator {
         transactionCount: item.transactionCount
       });
 
-      if (hasErrors && item.investment.gt(0)) {
+      if (
+        (hasErrors ||
+          currentRateErrors.find(({ dataSource, symbol }) => {
+            return dataSource === item.dataSource && symbol === item.symbol;
+          })) &&
+        item.investment.gt(0)
+      ) {
         errors.push({ dataSource: item.dataSource, symbol: item.symbol });
       }
     }
@@ -461,6 +514,10 @@ export class PortfolioCalculator {
       positions,
       hasErrors: hasAnySymbolMetricsErrors || overall.hasErrors
     };
+  }
+
+  public getDataProviderInfos() {
+    return this.dataProviderInfos;
   }
 
   public getInvestments(): { date: string; investment: Big }[] {
@@ -694,7 +751,7 @@ export class PortfolioCalculator {
         );
       } else if (!currentPosition.quantity.eq(0)) {
         Logger.warn(
-          `Missing initial value for symbol ${currentPosition.symbol} at ${currentPosition.firstBuyDate}`,
+          `Missing historical market data for symbol ${currentPosition.symbol}`,
           'PortfolioCalculator'
         );
         hasErrors = true;
@@ -748,7 +805,7 @@ export class PortfolioCalculator {
       let marketSymbols: GetValueObject[] = [];
       if (dataGatheringItems.length > 0) {
         try {
-          marketSymbols = await this.currentRateService.getValues({
+          const { values } = await this.currentRateService.getValues({
             currencies,
             dataGatheringItems,
             dateQuery: {
@@ -757,6 +814,7 @@ export class PortfolioCalculator {
             },
             userCurrency: this.currency
           });
+          marketSymbols = values;
         } catch (error) {
           Logger.error(
             `Failed to fetch info for date ${startDate} with exception`,
@@ -890,12 +948,16 @@ export class PortfolioCalculator {
 
     if (orders.length <= 0) {
       return {
+        currentValues: {},
+        grossPerformance: new Big(0),
+        grossPerformancePercentage: new Big(0),
         hasErrors: false,
         initialValue: new Big(0),
+        investmentValues: {},
+        maxInvestmentValues: {},
         netPerformance: new Big(0),
         netPerformancePercentage: new Big(0),
-        grossPerformance: new Big(0),
-        grossPerformancePercentage: new Big(0)
+        netPerformanceValues: {}
       };
     }
 
@@ -930,6 +992,7 @@ export class PortfolioCalculator {
     let grossPerformanceFromSells = new Big(0);
     let initialValue: Big;
     let investmentAtStartDate: Big;
+    const currentValues: { [date: string]: Big } = {};
     const investmentValues: { [date: string]: Big } = {};
     const maxInvestmentValues: { [date: string]: Big } = {};
     let lastAveragePrice = new Big(0);
@@ -1148,6 +1211,7 @@ export class PortfolioCalculator {
       }
 
       if (isChartMode && i > indexOfStartOrder) {
+        currentValues[order.date] = valueOfInvestment;
         netPerformanceValues[order.date] = grossPerformance
           .minus(grossPerformanceAtStartDate)
           .minus(fees.minus(feesAtStartDate));
@@ -1245,15 +1309,16 @@ export class PortfolioCalculator {
     }
 
     return {
-      initialValue,
+      currentValues,
       grossPerformancePercentage,
+      initialValue,
       investmentValues,
       maxInvestmentValues,
       netPerformancePercentage,
       netPerformanceValues,
+      grossPerformance: totalGrossPerformance,
       hasErrors: totalUnits.gt(0) && (!initialValue || !unitPriceAtEndDate),
-      netPerformance: totalNetPerformance,
-      grossPerformance: totalGrossPerformance
+      netPerformance: totalNetPerformance
     };
   }
 

@@ -21,7 +21,6 @@
           class="d-inline-block"
           color="primary"
           mat-flat-button
-          [disabled]="!demoAuthToken"
           (click)="createAccount()"
         >
           <ng-container i18n>Create Account</ng-container>
@@ -41,7 +40,7 @@
             <span i18n>Continue with Internet Identity</span>
           </button>
           <a
-            class="d-block px-4 rounded-pill"
+            class="px-4 rounded-pill w-100"
             href="../api/v1/auth/google"
             mat-stroked-button
             ><img

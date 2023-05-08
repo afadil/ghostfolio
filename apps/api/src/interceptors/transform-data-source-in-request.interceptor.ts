@@ -1,3 +1,4 @@
+import { ConfigurationService } from '@ghostfolio/api/services/configuration/configuration.service';
 import { decodeDataSource } from '@ghostfolio/common/helper';
 import {
   CallHandler,
@@ -6,8 +7,6 @@ import {
   NestInterceptor
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-
-import { ConfigurationService } from '../services/configuration.service';
 
 @Injectable()
 export class TransformDataSourceInRequestInterceptor<T>
@@ -24,7 +23,7 @@ export class TransformDataSourceInRequestInterceptor<T>
     const http = context.switchToHttp();
     const request = http.getRequest();
 
-    if (this.configurationService.get('ENABLE_FEATURE_SUBSCRIPTION') === true) {
+    if (this.configurationService.get('ENABLE_FEATURE_SUBSCRIPTION')) {
       if (request.body.dataSource) {
         request.body.dataSource = decodeDataSource(request.body.dataSource);
       }

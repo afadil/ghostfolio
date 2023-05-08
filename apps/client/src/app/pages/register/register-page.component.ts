@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { DataService } from '@ghostfolio/client/services/data.service';
 import { InternetIdentityService } from '@ghostfolio/client/services/internet-identity.service';
@@ -8,7 +8,6 @@ import { UserService } from '@ghostfolio/client/services/user/user.service';
 import { InfoItem, LineChartItem } from '@ghostfolio/common/interfaces';
 import { hasPermission, permissions } from '@ghostfolio/common/permissions';
 import { Role } from '@prisma/client';
-import { format } from 'date-fns';
 import { DeviceDetectorService } from 'ngx-device-detector';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -22,7 +21,6 @@ import { ShowAccessTokenDialog } from './show-access-token-dialog/show-access-to
   templateUrl: './register-page.html'
 })
 export class RegisterPageComponent implements OnDestroy, OnInit {
-  public currentYear = format(new Date(), 'yyyy');
   public demoAuthToken: string;
   public deviceType: string;
   public hasPermissionForSocialLogin: boolean;
@@ -63,7 +61,7 @@ export class RegisterPageComponent implements OnDestroy, OnInit {
 
   public async createAccount() {
     this.dataService
-      .postUser({ country: this.userService.getCountry() })
+      .postUser()
       .pipe(takeUntil(this.unsubscribeSubject))
       .subscribe(({ accessToken, authToken, role }) => {
         this.openShowAccessTokenDialog(accessToken, authToken, role);

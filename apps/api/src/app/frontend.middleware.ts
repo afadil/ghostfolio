@@ -1,11 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { ConfigurationService } from '@ghostfolio/api/services/configuration.service';
+import { environment } from '@ghostfolio/api/environments/environment';
+import { ConfigurationService } from '@ghostfolio/api/services/configuration/configuration.service';
 import { DEFAULT_LANGUAGE_CODE } from '@ghostfolio/common/config';
 import { DATE_FORMAT } from '@ghostfolio/common/helper';
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { format } from 'date-fns';
 import { NextFunction, Request, Response } from 'express';
 
@@ -18,18 +18,10 @@ export class FrontendMiddleware implements NestMiddleware {
   public indexHtmlIt = '';
   public indexHtmlNl = '';
   public indexHtmlPt = '';
-  public isProduction: boolean;
 
   public constructor(
-    private readonly configService: ConfigService,
     private readonly configurationService: ConfigurationService
   ) {
-    const NODE_ENV =
-      this.configService.get<'development' | 'production'>('NODE_ENV') ??
-      'development';
-
-    this.isProduction = NODE_ENV === 'production';
-
     try {
       this.indexHtmlDe = fs.readFileSync(
         this.getPathOfIndexHtmlFile('de'),
@@ -90,12 +82,24 @@ export class FrontendMiddleware implements NestMiddleware {
     ) {
       featureGraphicPath = 'assets/images/blog/ghostfolio-x-sackgeld.png';
       title = `Ghostfolio auf Sackgeld.com vorgestellt - ${title}`;
+    } else if (
+      request.path.startsWith('/en/blog/2023/02/ghostfolio-meets-umbrel')
+    ) {
+      featureGraphicPath = 'assets/images/blog/ghostfolio-x-umbrel.png';
+      title = `Ghostfolio meets Umbrel - ${title}`;
+    } else if (
+      request.path.startsWith(
+        '/en/blog/2023/03/ghostfolio-reaches-1000-stars-on-github'
+      )
+    ) {
+      featureGraphicPath = 'assets/images/blog/1000-stars-on-github.jpg';
+      title = `Ghostfolio reaches 1’000 Stars on GitHub - ${title}`;
     }
 
     if (
       request.path.startsWith('/api/') ||
       this.isFileRequest(request.url) ||
-      !this.isProduction
+      !environment.production
     ) {
       // Skip
       next();

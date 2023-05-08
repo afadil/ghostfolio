@@ -1,12 +1,12 @@
 import { LookupItem } from '@ghostfolio/api/app/symbol/interfaces/lookup-item.interface';
-import { ConfigurationService } from '@ghostfolio/api/services/configuration.service';
+import { ConfigurationService } from '@ghostfolio/api/services/configuration/configuration.service';
 import { DataProviderInterface } from '@ghostfolio/api/services/data-provider/interfaces/data-provider.interface';
 import {
   IDataProviderHistoricalResponse,
   IDataProviderResponse
 } from '@ghostfolio/api/services/interfaces/interfaces';
-import { PrismaService } from '@ghostfolio/api/services/prisma.service';
-import { SymbolProfileService } from '@ghostfolio/api/services/symbol-profile.service';
+import { PrismaService } from '@ghostfolio/api/services/prisma/prisma.service';
+import { SymbolProfileService } from '@ghostfolio/api/services/symbol-profile/symbol-profile.service';
 import { DATE_FORMAT, parseDate } from '@ghostfolio/common/helper';
 import { Granularity } from '@ghostfolio/common/types';
 import { Injectable, Logger } from '@nestjs/common';
@@ -30,7 +30,8 @@ export class GoogleSheetsService implements DataProviderInterface {
     aSymbol: string
   ): Promise<Partial<SymbolProfile>> {
     return {
-      dataSource: this.getName()
+      dataSource: this.getName(),
+      symbol: aSymbol
     };
   }
 
@@ -108,8 +109,14 @@ export class GoogleSheetsService implements DataProviderInterface {
     try {
       const response: { [symbol: string]: IDataProviderResponse } = {};
 
-      const symbolProfiles =
-        await this.symbolProfileService.getSymbolProfilesBySymbols(aSymbols);
+      const symbolProfiles = await this.symbolProfileService.getSymbolProfiles(
+        aSymbols.map((symbol) => {
+          return {
+            symbol,
+            dataSource: this.getName()
+          };
+        })
+      );
 
       const sheet = await this.getSheet({
         sheetId: this.configurationService.get('GOOGLE_SHEETS_ID'),
@@ -142,9 +149,15 @@ export class GoogleSheetsService implements DataProviderInterface {
     return {};
   }
 
+  public getTestSymbol() {
+    return 'INDEXSP:.INX';
+  }
+
   public async search(aQuery: string): Promise<{ items: LookupItem[] }> {
     const items = await this.prismaService.symbolProfile.findMany({
       select: {
+        assetClass: true,
+        assetSubClass: true,
         currency: true,
         dataSource: true,
         name: true,

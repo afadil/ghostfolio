@@ -1,24 +1,20 @@
 import { SubscriptionService } from '@ghostfolio/api/app/subscription/subscription.service';
-import { ConfigurationService } from '@ghostfolio/api/services/configuration.service';
-import { PrismaService } from '@ghostfolio/api/services/prisma.service';
+import { environment } from '@ghostfolio/api/environments/environment';
+import { ConfigurationService } from '@ghostfolio/api/services/configuration/configuration.service';
+import { PrismaService } from '@ghostfolio/api/services/prisma/prisma.service';
 import { PropertyService } from '@ghostfolio/api/services/property/property.service';
 import { TagService } from '@ghostfolio/api/services/tag/tag.service';
 import { PROPERTY_IS_READ_ONLY_MODE, locale } from '@ghostfolio/common/config';
-import {
-  User as IUser,
-  UserSettings,
-  UserWithSettings
-} from '@ghostfolio/common/interfaces';
+import { User as IUser, UserSettings } from '@ghostfolio/common/interfaces';
 import {
   getPermissions,
   hasRole,
   permissions
 } from '@ghostfolio/common/permissions';
+import { UserWithSettings } from '@ghostfolio/common/types';
 import { Injectable } from '@nestjs/common';
 import { Prisma, Role, User } from '@prisma/client';
 import { sortBy } from 'lodash';
-
-import { CreateUserDto } from './create-user.dto';
 
 const crypto = require('crypto');
 
@@ -170,7 +166,7 @@ export class UserService {
         this.subscriptionService.getSubscription(Subscription);
 
       if (
-        Analytics?.activityCount % 25 === 0 &&
+        Analytics?.activityCount % 20 === 0 &&
         user.subscription?.type === 'Basic'
       ) {
         currentPermissions.push(permissions.enableSubscriptionInterstitial);
@@ -199,6 +195,10 @@ export class UserService {
           );
         });
       }
+    }
+
+    if (!environment.production && role === 'ADMIN') {
+      currentPermissions.push(permissions.impersonateAllUsers);
     }
 
     user.Account = sortBy(user.Account, (account) => {
@@ -234,9 +234,10 @@ export class UserService {
   }
 
   public async createUser({
-    country,
     data
-  }: CreateUserDto & { data: Prisma.UserCreateInput }): Promise<User> {
+  }: {
+    data: Prisma.UserCreateInput;
+  }): Promise<User> {
     if (!data?.provider) {
       data.provider = 'ANONYMOUS';
     }
@@ -264,7 +265,6 @@ export class UserService {
     if (this.configurationService.get('ENABLE_FEATURE_SUBSCRIPTION')) {
       await this.prismaService.analytics.create({
         data: {
-          country,
           User: { connect: { id: user.id } }
         }
       });

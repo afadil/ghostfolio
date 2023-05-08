@@ -1,8 +1,8 @@
 import { AccountService } from '@ghostfolio/api/app/account/account.service';
-import { DataGatheringService } from '@ghostfolio/api/services/data-gathering.service';
-import { ExchangeRateDataService } from '@ghostfolio/api/services/exchange-rate-data.service';
-import { PrismaService } from '@ghostfolio/api/services/prisma.service';
-import { SymbolProfileService } from '@ghostfolio/api/services/symbol-profile.service';
+import { DataGatheringService } from '@ghostfolio/api/services/data-gathering/data-gathering.service';
+import { ExchangeRateDataService } from '@ghostfolio/api/services/exchange-rate-data/exchange-rate-data.service';
+import { PrismaService } from '@ghostfolio/api/services/prisma/prisma.service';
+import { SymbolProfileService } from '@ghostfolio/api/services/symbol-profile/symbol-profile.service';
 import {
   GATHER_ASSET_PROFILE_PROCESS,
   GATHER_ASSET_PROFILE_PROCESS_OPTIONS
@@ -73,6 +73,7 @@ export class OrderService {
       dataSource?: DataSource;
       symbol?: string;
       tags?: Tag[];
+      updateAccountBalance?: boolean;
       userId: string;
     }
   ): Promise<Order> {
@@ -89,12 +90,16 @@ export class OrderService {
       };
     }
 
+    const accountId = data.accountId;
+    let currency = data.currency;
     const tags = data.tags ?? [];
+    const updateAccountBalance = data.updateAccountBalance ?? false;
+    const userId = data.userId;
 
     if (data.type === 'ITEM') {
       const assetClass = data.assetClass;
       const assetSubClass = data.assetSubClass;
-      const currency = data.SymbolProfile.connectOrCreate.create.currency;
+      currency = data.SymbolProfile.connectOrCreate.create.currency;
       const dataSource: DataSource = 'MANUAL';
       const id = uuidv4();
       const name = data.SymbolProfile.connectOrCreate.create.symbol;
@@ -110,19 +115,19 @@ export class OrderService {
         dataSource,
         symbol: id
       };
-    } else {
-      data.SymbolProfile.connectOrCreate.create.symbol =
-        data.SymbolProfile.connectOrCreate.create.symbol.toUpperCase();
     }
 
-    await this.dataGatheringService.addJobToQueue(
-      GATHER_ASSET_PROFILE_PROCESS,
-      {
+    await this.dataGatheringService.addJobToQueue({
+      data: {
         dataSource: data.SymbolProfile.connectOrCreate.create.dataSource,
         symbol: data.SymbolProfile.connectOrCreate.create.symbol
       },
-      GATHER_ASSET_PROFILE_PROCESS_OPTIONS
-    );
+      name: GATHER_ASSET_PROFILE_PROCESS,
+      opts: {
+        ...GATHER_ASSET_PROFILE_PROCESS_OPTIONS,
+        jobId: `${data.SymbolProfile.connectOrCreate.create.dataSource}-${data.SymbolProfile.connectOrCreate.create.symbol}`
+      }
+    });
 
     const isDraft = isAfter(data.date as Date, endOfToday());
 
@@ -149,11 +154,12 @@ export class OrderService {
     delete data.dataSource;
     delete data.symbol;
     delete data.tags;
+    delete data.updateAccountBalance;
     delete data.userId;
 
     const orderData: Prisma.OrderCreateInput = data;
 
-    return this.prismaService.order.create({
+    const order = await this.prismaService.order.create({
       data: {
         ...orderData,
         Account,
@@ -165,6 +171,27 @@ export class OrderService {
         }
       }
     });
+
+    if (updateAccountBalance === true) {
+      let amount = new Big(data.unitPrice)
+        .mul(data.quantity)
+        .plus(data.fee)
+        .toNumber();
+
+      if (data.type === 'BUY') {
+        amount = new Big(amount).mul(-1).toNumber();
+      }
+
+      await this.accountService.updateAccountBalance({
+        accountId,
+        amount,
+        currency,
+        userId,
+        date: data.date as Date
+      });
+    }
+
+    return order;
   }
 
   public async deleteOrder(
@@ -179,6 +206,14 @@ export class OrderService {
     }
 
     return order;
+  }
+
+  public async deleteOrders(where: Prisma.OrderWhereInput): Promise<number> {
+    const { count } = await this.prismaService.order.deleteMany({
+      where
+    });
+
+    return count;
   }
 
   public async getOrders({

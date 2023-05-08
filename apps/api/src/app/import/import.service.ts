@@ -3,10 +3,11 @@ import { CreateAccountDto } from '@ghostfolio/api/app/account/create-account.dto
 import { CreateOrderDto } from '@ghostfolio/api/app/order/create-order.dto';
 import { Activity } from '@ghostfolio/api/app/order/interfaces/activities.interface';
 import { OrderService } from '@ghostfolio/api/app/order/order.service';
+import { PlatformService } from '@ghostfolio/api/app/platform/platform.service';
 import { PortfolioService } from '@ghostfolio/api/app/portfolio/portfolio.service';
 import { DataProviderService } from '@ghostfolio/api/services/data-provider/data-provider.service';
-import { ExchangeRateDataService } from '@ghostfolio/api/services/exchange-rate-data.service';
-import { SymbolProfileService } from '@ghostfolio/api/services/symbol-profile.service';
+import { ExchangeRateDataService } from '@ghostfolio/api/services/exchange-rate-data/exchange-rate-data.service';
+import { SymbolProfileService } from '@ghostfolio/api/services/symbol-profile/symbol-profile.service';
 import { parseDate } from '@ghostfolio/common/helper';
 import { UniqueAsset } from '@ghostfolio/common/interfaces';
 import {
@@ -14,7 +15,7 @@ import {
   OrderWithAccount
 } from '@ghostfolio/common/types';
 import { Injectable } from '@nestjs/common';
-import { SymbolProfile } from '@prisma/client';
+import { DataSource, Prisma, SymbolProfile } from '@prisma/client';
 import Big from 'big.js';
 import { endOfToday, isAfter, isSameDay, parseISO } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
@@ -26,6 +27,7 @@ export class ImportService {
     private readonly dataProviderService: DataProviderService,
     private readonly exchangeRateDataService: ExchangeRateDataService,
     private readonly orderService: OrderService,
+    private readonly platformService: PlatformService,
     private readonly portfolioService: PortfolioService,
     private readonly symbolProfileService: SymbolProfileService
   ) {}
@@ -118,15 +120,18 @@ export class ImportService {
     const accountIdMapping: { [oldAccountId: string]: string } = {};
 
     if (!isDryRun && accountsDto?.length) {
-      const existingAccounts = await this.accountService.accounts({
-        where: {
-          id: {
-            in: accountsDto.map(({ id }) => {
-              return id;
-            })
+      const [existingAccounts, existingPlatforms] = await Promise.all([
+        this.accountService.accounts({
+          where: {
+            id: {
+              in: accountsDto.map(({ id }) => {
+                return id;
+              })
+            }
           }
-        }
-      });
+        }),
+        this.platformService.getPlatforms()
+      ]);
 
       for (const account of accountsDto) {
         // Check if there is any existing account with the same ID
@@ -146,19 +151,24 @@ export class ImportService {
             delete account.id;
           }
 
-          const newAccountObject = {
+          let accountObject: Prisma.AccountCreateInput = {
             ...account,
             User: { connect: { id: userId } }
           };
 
-          if (platformId) {
-            Object.assign(newAccountObject, {
+          if (
+            existingPlatforms.some(({ id }) => {
+              return id === platformId;
+            })
+          ) {
+            accountObject = {
+              ...accountObject,
               Platform: { connect: { id: platformId } }
-            });
+            };
           }
 
           const newAccount = await this.accountService.createAccount(
-            newAccountObject,
+            accountObject,
             userId
           );
 
@@ -173,9 +183,10 @@ export class ImportService {
     for (const activity of activitiesDto) {
       if (!activity.dataSource) {
         if (activity.type === 'ITEM') {
-          activity.dataSource = 'MANUAL';
+          activity.dataSource = DataSource.MANUAL;
         } else {
-          activity.dataSource = this.dataProviderService.getPrimaryDataSource();
+          activity.dataSource =
+            this.dataProviderService.getDataSourceForImport();
         }
       }
 
@@ -254,6 +265,7 @@ export class ImportService {
             countries: null,
             createdAt: undefined,
             id: undefined,
+            isin: null,
             name: null,
             scraperConfiguration: null,
             sectors: null,
@@ -291,6 +303,7 @@ export class ImportService {
               }
             }
           },
+          updateAccountBalance: false,
           User: { connect: { id: userId } }
         });
       }

@@ -1,14 +1,14 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { ObservableStore } from '@codewithdan/observable-store';
 import { SubscriptionInterstitialDialogParams } from '@ghostfolio/client/components/subscription-interstitial-dialog/interfaces/interfaces';
 import { SubscriptionInterstitialDialog } from '@ghostfolio/client/components/subscription-interstitial-dialog/subscription-interstitial-dialog.component';
 import { User } from '@ghostfolio/common/interfaces';
 import { hasPermission, permissions } from '@ghostfolio/common/permissions';
-import { timezoneCitiesToCountries } from '@ghostfolio/common/timezone-cities-to-countries';
+import { parseISO } from 'date-fns';
 import { DeviceDetectorService } from 'ngx-device-detector';
-import { Subject, of } from 'rxjs';
+import { Observable, Subject, of } from 'rxjs';
 import { throwError } from 'rxjs';
 import { catchError, map, takeUntil } from 'rxjs/operators';
 
@@ -46,27 +46,17 @@ export class UserService extends ObservableStore<UserStoreState> {
     }
   }
 
-  public getCountry() {
-    let country: string;
-
-    if (Intl) {
-      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const timeZoneArray = timeZone.split('/');
-      const city = timeZoneArray[timeZoneArray.length - 1];
-
-      country = timezoneCitiesToCountries[city];
-    }
-
-    return country;
-  }
-
   public remove() {
     this.setState({ user: null }, UserStoreActions.RemoveUser);
   }
 
-  private fetchUser() {
-    return this.http.get<User>('/api/v1/user').pipe(
+  private fetchUser(): Observable<User> {
+    return this.http.get<any>('/api/v1/user').pipe(
       map((user) => {
+        if (user.settings?.retirementDate) {
+          user.settings.retirementDate = parseISO(user.settings.retirementDate);
+        }
+
         this.setState({ user }, UserStoreActions.GetUser);
 
         if (

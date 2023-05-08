@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
-import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AccountDetailDialog } from '@ghostfolio/client/components/account-detail-dialog/account-detail-dialog.component';
 import { AccountDetailDialogParams } from '@ghostfolio/client/components/account-detail-dialog/interfaces/interfaces';
@@ -20,7 +20,7 @@ import {
 import { hasPermission, permissions } from '@ghostfolio/common/permissions';
 import { Market } from '@ghostfolio/common/types';
 import { translate } from '@ghostfolio/ui/i18n';
-import { Account, AssetClass, DataSource } from '@prisma/client';
+import { Account, AssetClass, DataSource, Platform } from '@prisma/client';
 import { isNumber } from 'lodash';
 import { DeviceDetectorService } from 'ngx-device-detector';
 import { Subject } from 'rxjs';
@@ -55,6 +55,12 @@ export class AllocationsPageComponent implements OnDestroy, OnInit {
     [key in Market]: { name: string; value: number };
   };
   public placeholder = '';
+  public platforms: {
+    [id: string]: Pick<Platform, 'name'> & {
+      id: string;
+      value: number;
+    };
+  };
   public portfolioDetails: PortfolioDetails;
   public positions: {
     [symbol: string]: Pick<
@@ -65,7 +71,7 @@ export class AllocationsPageComponent implements OnDestroy, OnInit {
       | 'exchange'
       | 'name'
       | 'value'
-    >;
+    > & { etfProvider: string };
   };
   public sectors: {
     [name: string]: { name: string; value: number };
@@ -118,8 +124,8 @@ export class AllocationsPageComponent implements OnDestroy, OnInit {
     this.impersonationStorageService
       .onChangeHasImpersonation()
       .pipe(takeUntil(this.unsubscribeSubject))
-      .subscribe((aId) => {
-        this.hasImpersonationId = !!aId;
+      .subscribe((impersonationId) => {
+        this.hasImpersonationId = !!impersonationId;
       });
 
     this.filters$
@@ -198,6 +204,8 @@ export class AllocationsPageComponent implements OnDestroy, OnInit {
           this.changeDetectorRef.markForCheck();
         }
       });
+
+    this.initialize();
   }
 
   public initialize() {
@@ -217,17 +225,18 @@ export class AllocationsPageComponent implements OnDestroy, OnInit {
     this.markets = {
       developedMarkets: {
         name: 'developedMarkets',
-        value: 0
+        value: undefined
       },
       emergingMarkets: {
         name: 'emergingMarkets',
-        value: 0
+        value: undefined
       },
       otherMarkets: {
         name: 'otherMarkets',
-        value: 0
+        value: undefined
       }
     };
+    this.platforms = {};
     this.positions = {};
     this.sectors = {
       [UNKNOWN_KEY]: {
@@ -247,13 +256,22 @@ export class AllocationsPageComponent implements OnDestroy, OnInit {
   public initializeAnalysisData() {
     this.initialize();
 
-    for (const [id, { current, name, original }] of Object.entries(
-      this.portfolioDetails.accounts
-    )) {
+    for (const [
+      id,
+      { name, valueInBaseCurrency, valueInPercentage }
+    ] of Object.entries(this.portfolioDetails.accounts)) {
+      let value = 0;
+
+      if (this.hasImpersonationId) {
+        value = valueInPercentage;
+      } else {
+        value = valueInBaseCurrency;
+      }
+
       this.accounts[id] = {
         id,
         name,
-        value: current
+        value
       };
     }
 
@@ -273,6 +291,10 @@ export class AllocationsPageComponent implements OnDestroy, OnInit {
         assetClass: position.assetClass,
         assetSubClass: position.assetSubClass,
         currency: position.currency,
+        etfProvider: this.extractEtfProvider({
+          assetSubClass: position.assetSubClass,
+          name: position.name
+        }),
         exchange: position.exchange,
         name: position.name
       };
@@ -281,6 +303,16 @@ export class AllocationsPageComponent implements OnDestroy, OnInit {
         // Prepare analysis data by continents, countries and sectors except for cash
 
         if (position.countries.length > 0) {
+          if (!this.markets.developedMarkets.value) {
+            this.markets.developedMarkets.value = 0;
+          }
+          if (!this.markets.emergingMarkets.value) {
+            this.markets.emergingMarkets.value = 0;
+          }
+          if (!this.markets.otherMarkets.value) {
+            this.markets.otherMarkets.value = 0;
+          }
+
           this.markets.developedMarkets.value +=
             position.markets.developedMarkets * position.value;
           this.markets.emergingMarkets.value +=
@@ -343,6 +375,25 @@ export class AllocationsPageComponent implements OnDestroy, OnInit {
         value: isNumber(position.value)
           ? position.value
           : position.valueInPercentage
+      };
+    }
+
+    for (const [
+      id,
+      { name, valueInBaseCurrency, valueInPercentage }
+    ] of Object.entries(this.portfolioDetails.platforms)) {
+      let value = 0;
+
+      if (this.hasImpersonationId) {
+        value = valueInPercentage;
+      } else {
+        value = valueInBaseCurrency;
+      }
+
+      this.platforms[id] = {
+        id,
+        name,
+        value
       };
     }
 
@@ -439,5 +490,20 @@ export class AllocationsPageComponent implements OnDestroy, OnInit {
             this.router.navigate(['.'], { relativeTo: this.route });
           });
       });
+  }
+
+  private extractEtfProvider({
+    assetSubClass,
+    name
+  }: {
+    assetSubClass: PortfolioPosition['assetSubClass'];
+    name: string;
+  }) {
+    if (assetSubClass === 'ETF') {
+      const [firstWord] = name.split(' ');
+      return firstWord;
+    }
+
+    return UNKNOWN_KEY;
   }
 }

@@ -5,6 +5,395 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.267.0 - 2023-05-07
+
+### Added
+
+- Added support for the _Stripe_ checkout to the pricing page
+
+### Changed
+
+- Improved the management of platforms in the admin control panel
+- Improved the style of the interstitial for the subscription
+- Improved the language localization for German (`de`)
+- Upgraded `Nx` from version `15.9.2` to `16.0.3`
+
+## 1.266.0 - 2023-05-06
+
+### Added
+
+- Introduced the option to update the cash balance of an account when adding an activity
+- Added support for the management of platforms in the admin control panel
+- Added _DEV Community_ to the _As seen in_ section on the landing page
+
+### Changed
+
+- Upgraded `class-transformer` from version `0.3.2` to `0.5.1`
+- Upgraded `class-validator` from version `0.13.1` to `0.14.0`
+- Upgraded `prisma` from version `4.12.0` to `4.13.0`
+
+### Fixed
+
+- Added a fallback to use `quoteSummary(symbol)` if `quote(symbols)` fails in the _Yahoo Finance_ service
+- Added the missing `dataSource` attribute to the activities import
+
+## 1.265.0 - 2023-05-01
+
+### Changed
+
+- Improved the tooltip of the portfolio proportion chart component
+
+### Fixed
+
+- Fixed the missing platform name in the allocations by platform chart on the allocations page
+
+## 1.264.0 - 2023-05-01
+
+### Added
+
+- Introduced the allocations by platform chart on the allocations page
+
+### Changed
+
+- Deprecated the use of the environment variable `BASE_CURRENCY`
+- Cleaned up initial values from the _X-ray_ section
+
+## 1.263.0 - 2023-04-30
+
+### Changed
+
+- Split the environment variable `DATA_SOURCE_PRIMARY` in `DATA_SOURCE_EXCHANGE_RATES` and `DATA_SOURCE_IMPORT`
+
+### Fixed
+
+- Fixed the exception on the accounts page
+
+## 1.262.0 - 2023-04-29
+
+### Added
+
+- Added the labels to the tabs to increase the usability
+- Extended the support of the impersonation mode for local development
+
+### Changed
+
+- Improved the queue jobs implementation by adding / updating historical market data in bulk
+- Improved the language localization for German (`de`)
+
+### Fixed
+
+- Improved the holdings table by showing the cash position also when the filter contains the accounts, so that we can see the total allocation for that account
+
+## 1.261.0 - 2023-04-25
+
+### Added
+
+- Introduced a new button to delete all activities from the portfolio activities page
+- Added `state` to the `MarketData` database schema to distinguish `CLOSE` and `INTRADAY` in the data gathering
+- Added the distance to now to the subscription expiration date in the users table of the admin control panel
+
+## 1.260.0 - 2023-04-23
+
+### Added
+
+- Added `dataSource` as a unique constraint to the `MarketData` database schema
+
+### Fixed
+
+- Removed the unnecessary sort header of the comment column in the historical market data table of the admin control panel
+
+## 1.259.0 - 2023-04-22
+
+### Added
+
+- Added a fallback to historical market data if a data provider does not provide live data
+- Added a general health check endpoint
+- Added health check endpoints for data providers
+
+### Changed
+
+- Persisted today's market data continuously
+
+### Fixed
+
+- Fixed the alignment of the performance column header in the holdings table
+- Removed the unnecessary sort header of the comment column in the activities table
+- Fixed the targets in `proxy.conf.json` from `http://localhost:3333` to `http://0.0.0.0:3333` for local development
+
+## 1.258.0 - 2023-04-20
+
+### Added
+
+- Introduced a data source mapping
+
+## 1.257.0 - 2023-04-18
+
+### Added
+
+- Introduced the allocations by ETF provider chart on the allocations page
+
+### Fixed
+
+- Fixed an issue in the global heat map component caused by manipulating an input property
+- Fixed an issue with the currency inconsistency in the _EOD Historical Data_ service (convert from `GBX` to `GBp`)
+
+## 1.256.0 - 2023-04-17
+
+### Added
+
+- Added the _Yahoo Finance_ data enhancer for countries, sectors and urls
+
+### Changed
+
+- Enabled the configuration to immediately remove queue jobs on complete
+- Refactored the implementation of removing queue jobs
+
+### Fixed
+
+- Fixed the unique job ids of the gather asset profile process
+- Fixed the style of the button to fetch the current market price
+
+## 1.255.0 - 2023-04-15
+
+### Added
+
+- Made the system message expandable
+
+### Changed
+
+- Skipped creating queue jobs for asset profiles with `MANUAL` data source not having a scraper configuration
+- Reduced the execution interval of the data gathering to every hour
+- Upgraded `prisma` from version `4.11.0` to `4.12.0`
+
+### Fixed
+
+- Improved the style of the system message
+
+## 1.254.0 - 2023-04-14
+
+### Changed
+
+- Improved the queue jobs implementation by adding in bulk
+- Improved the queue jobs implementation by introducing unique job ids
+- Reverted the execution interval of the data gathering from every 12 hours to every 4 hours
+
+## 1.253.0 - 2023-04-14
+
+### Changed
+
+- Reduced the execution interval of the data gathering to every 12 hours
+
+### Fixed
+
+- Fixed the background color of dialogs in dark mode
+
+## 1.252.2 - 2023-04-11
+
+### Changed
+
+- Deprecated the `auth` endpoint of the login with _Security Token_ (`GET`)
+
+## 1.252.1 - 2023-04-10
+
+### Changed
+
+- Changed the slide toggles to checkboxes on the account page
+- Changed the slide toggles to checkboxes in the admin control panel
+- Decreased the density of the theme
+- Migrated the style of various components to `@angular/material` `15` (mdc)
+- Upgraded `@angular/cdk` and `@angular/material` from version `15.2.5` to `15.2.6`
+- Upgraded `bull` from version `4.10.2` to `4.10.4`
+
+## 1.251.0 - 2023-04-07
+
+### Changed
+
+- Improved the activities import for `csv` files exported by _Interactive Brokers_
+- Improved the rendering of the chart ticks (`0.5K` → `500`)
+- Increased the historical market data gathering of currency pairs to 10+ years
+- Improved the content of the Frequently Asked Questions (FAQ) page
+- Improved the content of the pricing page
+- Changed the `auth` endpoint of the login with _Security Token_ from `GET` to `POST`
+- Changed the `auth` endpoint of the _Internet Identity_ login provider from `GET` to `POST`
+- Migrated the style of the `libs` components to `@angular/material` `15` (mdc)
+  - `ActivitiesFilterComponent`
+  - `ActivitiesTableComponent`
+  - `BenchmarkComponent`
+  - `HoldingsTableComponent`
+- Upgraded `angular` from version `15.1.5` to `15.2.5`
+- Upgraded `Nx` from version `15.7.2` to `15.9.2`
+
+## 1.250.0 - 2023-04-02
+
+### Added
+
+- Added support for multiple subscription offers
+
+### Changed
+
+- Improved the portfolio evolution chart (ignore first item)
+- Improved the accounts import by handling the platform
+
+### Fixed
+
+- Fixed an issue with more than 50 activities in the activities import (`dryRun`)
+
+## 1.249.0 - 2023-03-27
+
+### Added
+
+- Extended the testimonial section on the landing page
+
+### Changed
+
+- Improved the loading state of the value component on the allocations page
+- Improved the value component by always showing the label (also while loading)
+- Improved the language localization for German (`de`)
+
+### Fixed
+
+- Fixed an issue with the algebraic sign in the value component
+
+## 1.248.0 - 2023-03-25
+
+### Added
+
+- Added a blog post: _Ghostfolio reaches 1’000 Stars on GitHub_
+- Added a breadcrumb navigation to the blog post pages
+
+### Changed
+
+- Refactored the calculation of the chart
+- Hid the platform selector if no platforms are available in the create or update account dialog
+- Upgraded `ng-extract-i18n-merge` from version `2.5.0` to `2.6.0`
+
+## 1.247.0 - 2023-03-23
+
+### Added
+
+- Added the asset and asset sub class to the search functionality
+- Added the subscription expiration date to the users table of the admin control panel
+
+### Changed
+
+- Updated the URL of the Ghostfolio Slack channel
+- Upgraded `prisma` from version `4.10.1` to `4.11.0`
+
+### Fixed
+
+- Fixed the total amount calculation in the portfolio evolution chart
+
+## 1.246.0 - 2023-03-18
+
+### Added
+
+- Added support for asset and asset sub class to the `EOD_HISTORICAL_DATA` data source type
+- Added `isin` to the asset profile model
+
+### Changed
+
+- Extended the _Trackinsight_ data enhancer for asset profile data by `isin`
+- Improved the language localization for _Gather Data_
+
+### Fixed
+
+- Fixed the border color in the _FIRE_ calculator (dark mode)
+
+## 1.245.0 - 2023-03-12
+
+### Added
+
+- Added the search functionality for the `EOD_HISTORICAL_DATA` data source type
+
+### Changed
+
+- Improved the usability of the _FIRE_ calculator
+- Improved the exchange rate service for a specific date used in activities with a manual currency
+- Upgraded `ngx-device-detector` from version `3.0.0` to `5.0.1`
+
+## 1.244.0 - 2023-03-09
+
+### Added
+
+- Extended the _FIRE_ calculator by a retirement date setting
+
+## 1.243.0 - 2023-03-08
+
+### Added
+
+- Added `COINGECKO` as a default to `DATA_SOURCES`
+
+### Changed
+
+- Improved the validation of the manual currency for the activity fee and unit price
+- Harmonized the axis style of charts
+- Made setting `NODE_ENV: production` optional (to avoid `ENOENT: no such file or directory` errors on startup)
+- Removed the environment variable `ENABLE_FEATURE_CUSTOM_SYMBOLS`
+
+## 1.242.0 - 2023-03-04
+
+### Changed
+
+- Simplified the database seeding
+- Upgraded `ngx-skeleton-loader` from version `5.0.0` to `7.0.0`
+
+### Fixed
+
+- Downgraded `Node.js` from version `18` to `16` (Dockerfile) to resolve `SIGSEGV` (segmentation fault) during the `prisma` database migrations (see https://github.com/prisma/prisma/issues/10649)
+
+## 1.241.0 - 2023-03-01
+
+### Changed
+
+- Filtered activities with type `ITEM` from search results
+- Considered the user's language in the _Stripe_ checkout
+- Upgraded the _Stripe_ dependencies
+- Upgraded `twitter-api-v2` from version `1.10.3` to `1.14.2`
+
+## 1.240.0 - 2023-02-26
+
+### Added
+
+- Supported a manual currency for the activity unit price
+
+### Fixed
+
+- Fixed the feature graphic of the _Ghostfolio meets Umbrel_ blog post
+
+## 1.239.0 - 2023-02-25
+
+### Added
+
+- Added a blog post: _Ghostfolio meets Umbrel_
+
+### Changed
+
+- Removed the dependency `rimraf`
+
+## 1.238.0 - 2023-02-25
+
+### Added
+
+- Added `COINGECKO` as a new data source type
+- Added support for data provider information to the position detail dialog
+- Added the configuration to publish a `linux/arm/v7` docker image
+- Added _Reddit_ to the _As seen in_ section on the landing page
+- Added _Umbrel_ to the _As seen in_ section on the landing page
+
+### Changed
+
+- Renamed the example environment variable file from `.env` to `.env.example`
+- Upgraded `zone.js` from version `0.11.8` to `0.12.0`
+
+### Fixed
+
+- Fixed `RangeError: Maximum call stack size exceeded` for values of type `Big` in the value redaction interceptor for the impersonation mode
+- Reset the letter spacing in buttons
+
+### Todo
+
+- Ensure that you still have a `.env` file in your project
+
 ## 1.237.0 - 2023-02-19
 
 ### Added
@@ -83,7 +472,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added support to export accounts
-- Added suport to import accounts
+- Added support to import accounts
 
 ### Changed
 
@@ -757,7 +1146,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added the alias to the `Access` database schema
 - Added support for translated time distances
-- Added a _GitHub Action_ to create an `arm64` docker image
+- Added a _GitHub Action_ to create an `linux/arm64` docker image
 
 ### Changed
 
@@ -1795,7 +2184,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Extended the historical data view in the admin control panel
-- Upgraded _Stripe_ dependencies
+- Upgraded the _Stripe_ dependencies
 - Upgraded `prisma` from version `3.7.0` to `3.8.1`
 
 ### Fixed

@@ -1,4 +1,5 @@
 import { redactAttributes } from '@ghostfolio/api/helper/object.helper';
+import { ConfigurationService } from '@ghostfolio/api/services/configuration/configuration.service';
 import { encodeDataSource } from '@ghostfolio/common/helper';
 import {
   CallHandler,
@@ -9,8 +10,6 @@ import {
 import { DataSource } from '@prisma/client';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-
-import { ConfigurationService } from '../services/configuration.service';
 
 @Injectable()
 export class TransformDataSourceInResponseInterceptor<T>
@@ -26,9 +25,7 @@ export class TransformDataSourceInResponseInterceptor<T>
   ): Observable<any> {
     return next.handle().pipe(
       map((data: any) => {
-        if (
-          this.configurationService.get('ENABLE_FEATURE_SUBSCRIPTION') === true
-        ) {
+        if (this.configurationService.get('ENABLE_FEATURE_SUBSCRIPTION')) {
           data = redactAttributes({
             options: [
               {

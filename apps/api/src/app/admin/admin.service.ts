@@ -1,10 +1,10 @@
 import { SubscriptionService } from '@ghostfolio/api/app/subscription/subscription.service';
-import { ConfigurationService } from '@ghostfolio/api/services/configuration.service';
-import { ExchangeRateDataService } from '@ghostfolio/api/services/exchange-rate-data.service';
-import { MarketDataService } from '@ghostfolio/api/services/market-data.service';
-import { PrismaService } from '@ghostfolio/api/services/prisma.service';
+import { ConfigurationService } from '@ghostfolio/api/services/configuration/configuration.service';
+import { ExchangeRateDataService } from '@ghostfolio/api/services/exchange-rate-data/exchange-rate-data.service';
+import { MarketDataService } from '@ghostfolio/api/services/market-data/market-data.service';
+import { PrismaService } from '@ghostfolio/api/services/prisma/prisma.service';
 import { PropertyService } from '@ghostfolio/api/services/property/property.service';
-import { SymbolProfileService } from '@ghostfolio/api/services/symbol-profile.service';
+import { SymbolProfileService } from '@ghostfolio/api/services/symbol-profile/symbol-profile.service';
 import { PROPERTY_CURRENCIES } from '@ghostfolio/common/config';
 import {
   AdminData,
@@ -100,6 +100,7 @@ export class AdminService {
             dataSource,
             marketDataItemCount,
             symbol,
+            assetClass: 'CASH',
             countriesCount: 0,
             sectorsCount: 0
           };
@@ -186,8 +187,11 @@ export class AdminService {
     ]);
 
     return {
-      assetProfile,
-      marketData
+      marketData,
+      assetProfile: assetProfile ?? {
+        symbol,
+        currency: '-'
+      }
     };
   }
 
@@ -231,12 +235,27 @@ export class AdminService {
   }
 
   private async getUsersWithAnalytics(): Promise<AdminData['users']> {
-    const usersWithAnalytics = await this.prismaService.user.findMany({
-      orderBy: {
+    let orderBy: any = {
+      createdAt: 'desc'
+    };
+    let where;
+
+    if (this.configurationService.get('ENABLE_FEATURE_SUBSCRIPTION')) {
+      orderBy = {
         Analytics: {
           updatedAt: 'desc'
         }
-      },
+      };
+      where = {
+        NOT: {
+          Analytics: null
+        }
+      };
+    }
+
+    const usersWithAnalytics = await this.prismaService.user.findMany({
+      orderBy,
+      where,
       select: {
         _count: {
           select: { Account: true, Order: true }
@@ -252,19 +271,16 @@ export class AdminService {
         id: true,
         Subscription: true
       },
-      take: 30,
-      where: {
-        NOT: {
-          Analytics: null
-        }
-      }
+      take: 30
     });
 
     return usersWithAnalytics.map(
       ({ _count, Analytics, createdAt, id, Subscription }) => {
         const daysSinceRegistration =
           differenceInDays(new Date(), createdAt) + 1;
-        const engagement = Analytics.activityCount / daysSinceRegistration;
+        const engagement = Analytics
+          ? Analytics.activityCount / daysSinceRegistration
+          : undefined;
 
         const subscription = this.configurationService.get(
           'ENABLE_FEATURE_SUBSCRIPTION'
@@ -278,8 +294,8 @@ export class AdminService {
           id,
           subscription,
           accountCount: _count.Account || 0,
-          country: Analytics.country,
-          lastActivity: Analytics.updatedAt,
+          country: Analytics?.country,
+          lastActivity: Analytics?.updatedAt,
           transactionCount: _count.Order || 0
         };
       }

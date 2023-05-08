@@ -59,14 +59,15 @@ model AuthDevice {
 }
 
 model MarketData {
-  createdAt   DateTime   @default(now())
+  createdAt   DateTime        @default(now())
   dataSource  DataSource
   date        DateTime
-  id          String     @id @default(uuid())
-  symbol      String
+  id          String          @id @default(uuid())
   marketPrice Float
+  state       MarketDataState @default(CLOSE)
+  symbol      String
 
-  @@unique([date, symbol])
+  @@unique([dataSource, date, symbol])
   @@index([symbol])
 }
 
@@ -119,6 +120,7 @@ model SymbolProfile {
   currency               String
   dataSource             DataSource
   id                     String                  @id @default(uuid())
+  isin                   String?
   name                   String?
   updatedAt              DateTime                @updatedAt
   scraperConfiguration   Json?
@@ -205,6 +207,7 @@ enum AssetSubClass {
 
 enum DataSource {
   ALPHA_VANTAGE
+  COINGECKO
   EOD_HISTORICAL_DATA
   GOOGLE_SHEETS
   MANUAL
@@ -212,9 +215,9 @@ enum DataSource {
   YAHOO
 }
 
-enum ViewMode {
-  DEFAULT
-  ZEN
+enum MarketDataState {
+  CLOSE
+  INTRADAY
 }
 
 enum Provider {
@@ -234,4 +237,9 @@ enum Type {
   DIVIDEND
   ITEM
   SELL
+}
+
+enum ViewMode {
+  DEFAULT
+  ZEN
 }

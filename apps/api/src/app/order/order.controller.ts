@@ -2,7 +2,8 @@ import { RedactValuesInResponseInterceptor } from '@ghostfolio/api/interceptors/
 import { TransformDataSourceInRequestInterceptor } from '@ghostfolio/api/interceptors/transform-data-source-in-request.interceptor';
 import { TransformDataSourceInResponseInterceptor } from '@ghostfolio/api/interceptors/transform-data-source-in-response.interceptor';
 import { ApiService } from '@ghostfolio/api/services/api/api.service';
-import { ImpersonationService } from '@ghostfolio/api/services/impersonation.service';
+import { ImpersonationService } from '@ghostfolio/api/services/impersonation/impersonation.service';
+import { HEADER_KEY_IMPERSONATION } from '@ghostfolio/common/config';
 import { hasPermission, permissions } from '@ghostfolio/common/permissions';
 import type { RequestWithUser } from '@ghostfolio/common/types';
 import {
@@ -40,6 +41,23 @@ export class OrderController {
     @Inject(REQUEST) private readonly request: RequestWithUser
   ) {}
 
+  @Delete()
+  @UseGuards(AuthGuard('jwt'))
+  public async deleteOrders(): Promise<number> {
+    if (
+      !hasPermission(this.request.user.permissions, permissions.deleteOrder)
+    ) {
+      throw new HttpException(
+        getReasonPhrase(StatusCodes.FORBIDDEN),
+        StatusCodes.FORBIDDEN
+      );
+    }
+
+    return this.orderService.deleteOrders({
+      userId: this.request.user.id
+    });
+  }
+
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
   public async deleteOrder(@Param('id') id: string): Promise<OrderModel> {
@@ -66,7 +84,7 @@ export class OrderController {
   @UseInterceptors(RedactValuesInResponseInterceptor)
   @UseInterceptors(TransformDataSourceInResponseInterceptor)
   public async getAllOrders(
-    @Headers('impersonation-id') impersonationId,
+    @Headers(HEADER_KEY_IMPERSONATION.toLowerCase()) impersonationId,
     @Query('accounts') filterByAccounts?: string,
     @Query('assetClasses') filterByAssetClasses?: string,
     @Query('tags') filterByTags?: string
@@ -78,10 +96,7 @@ export class OrderController {
     });
 
     const impersonationUserId =
-      await this.impersonationService.validateImpersonationId(
-        impersonationId,
-        this.request.user.id
-      );
+      await this.impersonationService.validateImpersonationId(impersonationId);
     const userCurrency = this.request.user.Settings.settings.baseCurrency;
 
     const activities = await this.orderService.getOrders({

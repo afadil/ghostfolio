@@ -13,6 +13,7 @@
         (activityDeleted)="onDeleteActivity($event)"
         (activityToClone)="onCloneActivity($event)"
         (activityToUpdate)="onUpdateActivity($event)"
+        (deleteAllActivities)="onDeleteAllActivities()"
         (export)="onExport($event)"
         (exportDrafts)="onExportDrafts($event)"
         (import)="onImport()"
@@ -32,7 +33,7 @@
       [queryParams]="{ createDialog: true }"
       [routerLink]="[]"
     >
-      <ion-icon class="mt-2" name="add-outline" size="large"></ion-icon>
+      <ion-icon name="add-outline" size="large"></ion-icon>
     </a>
   </div>
 </div>

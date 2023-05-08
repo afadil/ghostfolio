@@ -146,6 +146,10 @@ export class DataService {
     return this.http.delete<any>(`/api/v1/account/${aId}`);
   }
 
+  public deleteAllOrders() {
+    return this.http.delete<any>(`/api/v1/order/`);
+  }
+
   public deleteOrder(aId: string) {
     return this.http.delete<any>(`/api/v1/order/${aId}`);
   }
@@ -388,9 +392,9 @@ export class DataService {
   }
 
   public loginAnonymous(accessToken: string) {
-    return this.http.get<OAuthResponse>(
-      `/api/v1/auth/anonymous/${accessToken}`
-    );
+    return this.http.post<OAuthResponse>(`/api/v1/auth/anonymous`, {
+      accessToken
+    });
   }
 
   public postAccess(aAccess: CreateAccessDto) {
@@ -405,8 +409,8 @@ export class DataService {
     return this.http.post<OrderModel>(`/api/v1/order`, aOrder);
   }
 
-  public postUser({ country }: { country: string }) {
-    return this.http.post<UserItem>(`/api/v1/user`, { country });
+  public postUser() {
+    return this.http.post<UserItem>(`/api/v1/user`, {});
   }
 
   public putAccount(aAccount: UpdateAccountDto) {

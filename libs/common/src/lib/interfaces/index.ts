@@ -10,6 +10,7 @@ import {
 import { BenchmarkMarketDataDetails } from './benchmark-market-data-details.interface';
 import { Benchmark } from './benchmark.interface';
 import { Coupon } from './coupon.interface';
+import { DataProviderInfo } from './data-provider-info.interface';
 import { EnhancedSymbolProfile } from './enhanced-symbol-profile.interface';
 import { Export } from './export.interface';
 import { FilterGroup } from './filter-group.interface';
@@ -39,7 +40,6 @@ import { ScraperConfiguration } from './scraper-configuration.interface';
 import { TimelinePosition } from './timeline-position.interface';
 import { UniqueAsset } from './unique-asset.interface';
 import { UserSettings } from './user-settings.interface';
-import { UserWithSettings } from './user-with-settings';
 import { User } from './user.interface';
 
 export {
@@ -54,6 +54,7 @@ export {
   BenchmarkMarketDataDetails,
   BenchmarkResponse,
   Coupon,
+  DataProviderInfo,
   EnhancedSymbolProfile,
   Export,
   Filter,
@@ -82,6 +83,5 @@ export {
   TimelinePosition,
   UniqueAsset,
   User,
-  UserSettings,
-  UserWithSettings
+  UserSettings
 };

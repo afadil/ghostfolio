@@ -1,13 +1,14 @@
 import { BenchmarkService } from '@ghostfolio/api/app/benchmark/benchmark.service';
+import { PlatformService } from '@ghostfolio/api/app/platform/platform.service';
 import { RedisCacheService } from '@ghostfolio/api/app/redis-cache/redis-cache.service';
-import { ConfigurationService } from '@ghostfolio/api/services/configuration.service';
-import { ExchangeRateDataService } from '@ghostfolio/api/services/exchange-rate-data.service';
-import { PrismaService } from '@ghostfolio/api/services/prisma.service';
+import { ConfigurationService } from '@ghostfolio/api/services/configuration/configuration.service';
+import { ExchangeRateDataService } from '@ghostfolio/api/services/exchange-rate-data/exchange-rate-data.service';
+import { PrismaService } from '@ghostfolio/api/services/prisma/prisma.service';
 import { PropertyService } from '@ghostfolio/api/services/property/property.service';
 import { TagService } from '@ghostfolio/api/services/tag/tag.service';
 import {
-  DEMO_USER_ID,
   PROPERTY_COUNTRIES_OF_SUBSCRIBERS,
+  PROPERTY_DEMO_USER_ID,
   PROPERTY_IS_READ_ONLY_MODE,
   PROPERTY_SLACK_COMMUNITY_USERS,
   PROPERTY_STRIPE_CONFIG,
@@ -22,6 +23,7 @@ import { InfoItem } from '@ghostfolio/common/interfaces';
 import { Statistics } from '@ghostfolio/common/interfaces/statistics.interface';
 import { Subscription } from '@ghostfolio/common/interfaces/subscription.interface';
 import { permissions } from '@ghostfolio/common/permissions';
+import { SubscriptionOffer } from '@ghostfolio/common/types';
 import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bent from 'bent';
@@ -37,6 +39,7 @@ export class InfoService {
     private readonly configurationService: ConfigurationService,
     private readonly exchangeRateDataService: ExchangeRateDataService,
     private readonly jwtService: JwtService,
+    private readonly platformService: PlatformService,
     private readonly prismaService: PrismaService,
     private readonly propertyService: PropertyService,
     private readonly redisCacheService: RedisCacheService,
@@ -46,9 +49,12 @@ export class InfoService {
   public async get(): Promise<InfoItem> {
     const info: Partial<InfoItem> = {};
     let isReadOnlyMode: boolean;
-    const platforms = await this.prismaService.platform.findMany({
-      orderBy: { name: 'asc' },
-      select: { id: true, name: true }
+    const platforms = (
+      await this.platformService.getPlatforms({
+        orderBy: { name: 'asc' }
+      })
+    ).map(({ id, name }) => {
+      return { id, name };
     });
     let systemMessage: string;
 
@@ -59,9 +65,7 @@ export class InfoService {
     }
 
     if (this.configurationService.get('ENABLE_FEATURE_FEAR_AND_GREED_INDEX')) {
-      if (
-        this.configurationService.get('ENABLE_FEATURE_SUBSCRIPTION') === true
-      ) {
+      if (this.configurationService.get('ENABLE_FEATURE_SUBSCRIPTION')) {
         info.fearAndGreedDataSource = encodeDataSource(
           ghostfolioFearAndGreedIndexDataSource
         );
@@ -120,7 +124,7 @@ export class InfoService {
       baseCurrency: this.configurationService.get('BASE_CURRENCY'),
       benchmarks: await this.benchmarkService.getBenchmarkAssetProfiles(),
       currencies: this.exchangeRateDataService.getCurrencies(),
-      demoAuthToken: this.getDemoAuthToken(),
+      demoAuthToken: await this.getDemoAuthToken(),
       statistics: await this.getStatistics(),
       subscriptions: await this.getSubscriptions(),
       tags: await this.tagService.get()
@@ -248,10 +252,18 @@ export class InfoService {
     )) as string;
   }
 
-  private getDemoAuthToken() {
-    return this.jwtService.sign({
-      id: DEMO_USER_ID
-    });
+  private async getDemoAuthToken() {
+    const demoUserId = (await this.propertyService.getByKey(
+      PROPERTY_DEMO_USER_ID
+    )) as string;
+
+    if (demoUserId) {
+      return this.jwtService.sign({
+        id: demoUserId
+      });
+    }
+
+    return undefined;
   }
 
   private async getStatistics() {
@@ -298,19 +310,17 @@ export class InfoService {
     return statistics;
   }
 
-  private async getSubscriptions(): Promise<Subscription[]> {
+  private async getSubscriptions(): Promise<{
+    [offer in SubscriptionOffer]: Subscription;
+  }> {
     if (!this.configurationService.get('ENABLE_FEATURE_SUBSCRIPTION')) {
       return undefined;
     }
-
-    let subscriptions: Subscription[] = [];
 
     const stripeConfig = (await this.prismaService.property.findUnique({
       where: { key: PROPERTY_STRIPE_CONFIG }
     })) ?? { value: '{}' };
 
-    subscriptions = [JSON.parse(stripeConfig.value)];
-
-    return subscriptions;
+    return JSON.parse(stripeConfig.value);
   }
 }

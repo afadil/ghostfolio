@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
-import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CreateOrderDto } from '@ghostfolio/api/app/order/create-order.dto';
 import { Activity } from '@ghostfolio/api/app/order/interfaces/activities.interface';
@@ -88,8 +88,8 @@ export class ActivitiesPageComponent implements OnDestroy, OnInit {
     this.impersonationStorageService
       .onChangeHasImpersonation()
       .pipe(takeUntil(this.unsubscribeSubject))
-      .subscribe((aId) => {
-        this.hasImpersonationId = !!aId;
+      .subscribe((impersonationId) => {
+        this.hasImpersonationId = !!impersonationId;
       });
 
     this.userService.stateChanged
@@ -136,6 +136,23 @@ export class ActivitiesPageComponent implements OnDestroy, OnInit {
           this.fetchActivities();
         }
       });
+  }
+
+  public onDeleteAllActivities() {
+    const confirmation = confirm(
+      $localize`Do you really want to delete all your activities?`
+    );
+
+    if (confirmation) {
+      this.dataService
+        .deleteAllOrders()
+        .pipe(takeUntil(this.unsubscribeSubject))
+        .subscribe({
+          next: () => {
+            this.fetchActivities();
+          }
+        });
+    }
   }
 
   public onExport(activityIds?: string[]) {

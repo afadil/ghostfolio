@@ -5,7 +5,7 @@
   (closeButtonClicked)="onCancel()"
 ></gf-dialog-header>
 
-<div class="flex-grow-1" mat-dialog-content>
+<div class="flex-grow-1 py-3" mat-dialog-content>
   <ng-container *ngIf="!isFileSelected">
     <ng-container *ngIf="mode === 'DIVIDEND'; else selectFile">
       <form [formGroup]="uniqueAssetForm" (ngSubmit)="onLoadDividends()">
@@ -34,7 +34,7 @@
     <ng-template #selectFile>
       <div class="d-flex justify-content-center flex-column">
         <button
-          class="py-3"
+          class="py-4"
           color="primary"
           mat-stroked-button
           (click)="onSelectFile()"
@@ -72,6 +72,7 @@
         [hasPermissionToFilter]="false"
         [hasPermissionToOpenDetails]="false"
         [locale]="data?.user?.settings?.locale"
+        [pageSize]="maxSafeInteger"
         [showActions]="false"
         [showCheckbox]="true"
         [showFooter]="false"

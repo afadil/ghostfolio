@@ -6,7 +6,7 @@
   </div>
   <div *ngIf="user?.settings" class="mb-5 row">
     <div class="col">
-      <mat-card class="mb-3">
+      <mat-card appearance="outlined" class="mb-3">
         <mat-card-content>
           <div
             *ngIf="hasPermissionToUpdateUserSettings && user?.subscription"
@@ -32,9 +32,18 @@
                   <button
                     color="primary"
                     mat-flat-button
-                    (click)="onCheckout(priceId)"
+                    (click)="onCheckout()"
                   >
-                    <ng-container i18n>Upgrade</ng-container>
+                    <ng-container
+                      *ngIf="user.subscription.offer === 'default'"
+                      i18n
+                      >Upgrade</ng-container
+                    >
+                    <ng-container
+                      *ngIf="user.subscription.offer === 'renewal'"
+                      i18n
+                      >Renew</ng-container
+                    >
                   </button>
                   <div *ngIf="price" class="mt-1">
                     <ng-container *ngIf="coupon"
@@ -79,12 +88,12 @@
               </div>
             </div>
             <div class="pl-1 w-50">
-              <mat-slide-toggle
+              <mat-checkbox
                 color="primary"
                 [checked]="user.settings.isRestrictedView"
                 [disabled]="!hasPermissionToUpdateUserSettings"
                 (change)="onRestrictedViewChange($event)"
-              ></mat-slide-toggle>
+              ></mat-checkbox>
             </div>
           </div>
           <div class="d-flex mt-4 py-1">
@@ -96,7 +105,7 @@
                 <div class="pl-1 w-50">
                   <mat-form-field
                     appearance="outline"
-                    class="compact-with-outline w-100 without-hint"
+                    class="w-100 without-hint"
                   >
                     <mat-select
                       name="baseCurrency"
@@ -120,7 +129,7 @@
                 <div class="pl-1 w-50">
                   <mat-form-field
                     appearance="outline"
-                    class="compact-with-outline w-100 without-hint"
+                    class="w-100 without-hint"
                   >
                     <mat-select
                       name="language"
@@ -165,7 +174,7 @@
                 <div class="pl-1 w-50">
                   <mat-form-field
                     appearance="outline"
-                    class="compact-with-outline w-100 without-hint"
+                    class="w-100 without-hint"
                   >
                     <mat-select
                       name="locale"
@@ -190,7 +199,7 @@
                 <div class="pl-1 w-50">
                   <mat-form-field
                     appearance="outline"
-                    class="compact-with-outline w-100 without-hint"
+                    class="w-100 without-hint"
                   >
                     <mat-select
                       class="with-placeholder-as-option"
@@ -217,23 +226,23 @@
               </div>
             </div>
             <div class="pl-1 w-50">
-              <mat-slide-toggle
+              <mat-checkbox
                 color="primary"
                 [checked]="user.settings.viewMode === 'ZEN'"
                 [disabled]="!hasPermissionToUpdateViewMode"
                 (change)="onViewModeChange($event)"
-              ></mat-slide-toggle>
+              ></mat-checkbox>
             </div>
           </div>
           <div class="align-items-center d-flex mt-4 py-1">
             <div class="pr-1 w-50" i18n>Sign in with fingerprint</div>
             <div class="pl-1 w-50">
-              <mat-slide-toggle
+              <mat-checkbox
                 #toggleSignInWithFingerprintEnabledElement
                 color="primary"
                 [disabled]="!hasPermissionToUpdateUserSettings"
                 (change)="onSignInWithFingerprintChange($event)"
-              ></mat-slide-toggle>
+              ></mat-checkbox>
             </div>
           </div>
           <div
@@ -247,12 +256,12 @@
               </div>
             </div>
             <div class="pl-1 w-50">
-              <mat-slide-toggle
+              <mat-checkbox
                 color="primary"
                 [checked]="user.settings.isExperimentalFeatures"
                 [disabled]="!hasPermissionToUpdateUserSettings"
                 (change)="onExperimentalFeaturesChange($event)"
-              ></mat-slide-toggle>
+              ></mat-checkbox>
             </div>
           </div>
           <div class="align-items-center d-flex mt-4 py-1">

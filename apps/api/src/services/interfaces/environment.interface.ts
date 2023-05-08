@@ -5,10 +5,10 @@ export interface Environment extends CleanedEnvAccessors {
   ALPHA_VANTAGE_API_KEY: string;
   BASE_CURRENCY: string;
   CACHE_TTL: number;
-  DATA_SOURCE_PRIMARY: string;
+  DATA_SOURCE_EXCHANGE_RATES: string;
+  DATA_SOURCE_IMPORT: string;
   DATA_SOURCES: string[];
   ENABLE_FEATURE_BLOG: boolean;
-  ENABLE_FEATURE_CUSTOM_SYMBOLS: boolean;
   ENABLE_FEATURE_FEAR_AND_GREED_INDEX: boolean;
   ENABLE_FEATURE_READ_ONLY_MODE: boolean;
   ENABLE_FEATURE_SOCIAL_LOGIN: boolean;

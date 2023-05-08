@@ -1,5 +1,5 @@
 import { WebAuthService } from '@ghostfolio/api/app/auth/web-auth.service';
-import { ConfigurationService } from '@ghostfolio/api/services/configuration.service';
+import { ConfigurationService } from '@ghostfolio/api/services/configuration/configuration.service';
 import { DEFAULT_LANGUAGE_CODE } from '@ghostfolio/common/config';
 import { OAuthResponse } from '@ghostfolio/common/interfaces';
 import {
@@ -33,13 +33,33 @@ export class AuthController {
     private readonly webAuthService: WebAuthService
   ) {}
 
+  /**
+   * @deprecated
+   */
   @Get('anonymous/:accessToken')
-  public async accessTokenLogin(
+  public async accessTokenLoginGet(
     @Param('accessToken') accessToken: string
   ): Promise<OAuthResponse> {
     try {
       const authToken = await this.authService.validateAnonymousLogin(
         accessToken
+      );
+      return { authToken };
+    } catch {
+      throw new HttpException(
+        getReasonPhrase(StatusCodes.FORBIDDEN),
+        StatusCodes.FORBIDDEN
+      );
+    }
+  }
+
+  @Post('anonymous')
+  public async accessTokenLogin(
+    @Body() body: { accessToken: string }
+  ): Promise<OAuthResponse> {
+    try {
+      const authToken = await this.authService.validateAnonymousLogin(
+        body.accessToken
       );
       return { authToken };
     } catch {
@@ -81,13 +101,13 @@ export class AuthController {
     }
   }
 
-  @Get('internet-identity/:principalId')
+  @Post('internet-identity')
   public async internetIdentityLogin(
-    @Param('principalId') principalId: string
+    @Body() body: { principalId: string }
   ): Promise<OAuthResponse> {
     try {
       const authToken = await this.authService.validateInternetIdentityLogin(
-        principalId
+        body.principalId
       );
       return { authToken };
     } catch {

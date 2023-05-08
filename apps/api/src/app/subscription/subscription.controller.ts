@@ -1,4 +1,4 @@
-import { ConfigurationService } from '@ghostfolio/api/services/configuration.service';
+import { ConfigurationService } from '@ghostfolio/api/services/configuration/configuration.service';
 import { PropertyService } from '@ghostfolio/api/services/property/property.service';
 import {
   DEFAULT_LANGUAGE_CODE,
@@ -117,7 +117,7 @@ export class SubscriptionController {
       return await this.subscriptionService.createCheckoutSession({
         couponId,
         priceId,
-        userId: this.request.user.id
+        user: this.request.user
       });
     } catch (error) {
       Logger.error(error, 'SubscriptionController');

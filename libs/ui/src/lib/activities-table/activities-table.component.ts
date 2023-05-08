@@ -10,12 +10,9 @@ import {
   Output,
   ViewChild
 } from '@angular/core';
-import {
-  MatLegacyPaginator as MatPaginator,
-  LegacyPageEvent as PageEvent
-} from '@angular/material/legacy-paginator';
-import { MatLegacyTableDataSource as MatTableDataSource } from '@angular/material/legacy-table';
+import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
+import { MatTableDataSource } from '@angular/material/table';
 import { Router } from '@angular/router';
 import { Activity } from '@ghostfolio/api/app/order/interfaces/activities.interface';
 import { DEFAULT_PAGE_SIZE } from '@ghostfolio/common/config';
@@ -52,6 +49,7 @@ export class ActivitiesTableComponent implements OnChanges, OnDestroy, OnInit {
   @Output() activityDeleted = new EventEmitter<string>();
   @Output() activityToClone = new EventEmitter<OrderWithAccount>();
   @Output() activityToUpdate = new EventEmitter<OrderWithAccount>();
+  @Output() deleteAllActivities = new EventEmitter<void>();
   @Output() export = new EventEmitter<string[]>();
   @Output() exportDrafts = new EventEmitter<string[]>();
   @Output() import = new EventEmitter<void>();
@@ -232,6 +230,10 @@ export class ActivitiesTableComponent implements OnChanges, OnDestroy, OnInit {
           return activity.id;
         })
     );
+  }
+
+  public onDeleteAllActivities() {
+    this.deleteAllActivities.emit();
   }
 
   public onImport() {
